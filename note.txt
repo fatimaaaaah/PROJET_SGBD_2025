@@ -1,0 +1,20 @@
+npm init
+
+npm i express pg cors
+
+ touch index.js
+
+pour PostgreSQL on a 
+
+psql -U postgres
+mdp : projetSGBD2025
+\l : liste des base de donnees 
+\dt : toutes les tables de la bd 
+\q : pour quitter
+\c classroom : pour utiliser la bd
+
+create user administrateur with password 'projetSGBD2025';
+grant all privileges on database CLASSROOM to administrateur;
+select * from professeur;
+
+http://localhost:5000/professeurs requete post
