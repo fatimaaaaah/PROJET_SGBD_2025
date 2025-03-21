@@ -9,14 +9,20 @@ import {
   FormControlLabel,
   Checkbox,
   Link,
+  InputAdornment,
+  IconButton,
   Snackbar,
   Alert,
 } from "@mui/material";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import { useNavigate } from "react-router-dom";
 import GoogleIcon from "@mui/icons-material/Google";
 import MicrosoftIcon from '@mui/icons-material/Microsoft';
 import GitHubIcon from "@mui/icons-material/GitHub";
-import { useNavigate } from "react-router-dom";
+import image from "../image/1.jpg";
+
 
 const SignUp = () => {
   const navigate = useNavigate();
@@ -25,119 +31,118 @@ const SignUp = () => {
   const [nom, setNom] = useState("");
   const [prenom, setPrenom] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [mot_de_passe, setMotDePasse] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [conditions, setConditions] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // États pour les erreurs
-  const [errors, setErrors] = useState({
-    nom: "",
-    prenom: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    conditions: "",
-  });
-
-  // État pour afficher les messages d'erreur globaux
+  // États pour les messages d'erreur
+  const [errorMessage, setErrorMessage] = useState("");
   const [openSnackbar, setOpenSnackbar] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
 
-  // Fonction pour valider le formulaire
-  const validateForm = () => {
-    let isValid = true;
-    const newErrors = {
-      nom: "",
-      prenom: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-      conditions: "",
-    };
-
-    // Validation du nom
-    if (!nom) {
-      newErrors.nom = "Le nom est requis.";
-      isValid = false;
-    }
-
-    // Validation du prénom
-    if (!prenom) {
-      newErrors.prenom = "Le prénom est requis.";
-      isValid = false;
-    }
-
-    // Validation de l'email
-    if (!email) {
-      newErrors.email = "L'email est requis.";
-      isValid = false;
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = "L'email est invalide.";
-      isValid = false;
-    }
-
-    // Validation du mot de passe
-    if (!password) {
-      newErrors.password = "Le mot de passe est requis.";
-      isValid = false;
-    } else if (password.length < 8) {
-      newErrors.password = "Le mot de passe doit contenir au moins 8 caractères.";
-      isValid = false;
-    }
-
-    // Validation de la confirmation du mot de passe
-    if (!confirmPassword) {
-      newErrors.confirmPassword = "Veuillez confirmer votre mot de passe.";
-      isValid = false;
-    } else if (password !== confirmPassword) {
-      newErrors.confirmPassword = "Les mots de passe ne correspondent pas.";
-      isValid = false;
-    }
-
-    // Validation des conditions
-    if (!conditions) {
-      newErrors.conditions = "Vous devez accepter les conditions d'utilisation.";
-      isValid = false;
-    }
-
-    setErrors(newErrors);
-    return isValid;
+  // Fonction pour valider la complexité du mot de passe
+  const validatePassword = (password) => {
+    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    return regex.test(password);
   };
 
   // Gestion de la soumission du formulaire
-  const handleSubmit = (e) => {
+  const onSubmitForm = async (e) => {
     e.preventDefault();
 
-    if (validateForm()) {
-      // Si le formulaire est valide, traiter l'inscription
-      console.log("Formulaire soumis avec succès !");
-      setSnackbarMessage("Inscription réussie !");
-      setOpenSnackbar(true);
-      // Rediriger vers une autre page après l'inscription
-      navigate("/login");
-    } else {
-      setSnackbarMessage("Veuillez corriger les erreurs dans le formulaire.");
-      setOpenSnackbar(true);
+    // Validation des champs obligatoires
+    if (!nom || !prenom || !email || !mot_de_passe || !confirmPassword) {
+        setErrorMessage("Tous les champs sont obligatoires.");
+        setOpenSnackbar(true);
+        return;
     }
-  };
 
+    // Validation des conditions d'utilisation
+    if (!conditions) {
+        setErrorMessage("Vous devez accepter les conditions d'utilisation.");
+        setOpenSnackbar(true);
+        return;
+    }
+
+    // Validation du mot de passe et de la confirmation
+    if (mot_de_passe !== confirmPassword) {
+        setErrorMessage("Les mots de passe ne correspondent pas.");
+        setOpenSnackbar(true);
+        return;
+    }
+
+    // Validation de la complexité du mot de passe
+    if (!validatePassword(mot_de_passe)) {
+        setErrorMessage(
+            "Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial."
+        );
+        setOpenSnackbar(true);
+        return;
+    }
+
+    try {
+        const body = {
+            nom,
+            prenom,
+            email,
+            mot_de_passe,
+        };
+        const response = await fetch("http://localhost:5000/professeurs", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            // Redirection vers la page d'accueil après une inscription réussie
+            navigate("/home");
+        } else {
+            // Afficher le message d'erreur renvoyé par le backend
+            setErrorMessage(data.error || "Erreur lors de l'inscription. Veuillez réessayer.");
+            setOpenSnackbar(true);
+        }
+    } catch (err) {
+        console.error(err.message);
+        setErrorMessage("Une erreur s'est produite. Veuillez réessayer.");
+        setOpenSnackbar(true);
+    }
+};
   // Fermer le Snackbar
   const handleCloseSnackbar = () => {
     setOpenSnackbar(false);
   };
 
+  // Styles
   const paperStyle = {
-    padding: "30px 20px",
-    width: 300,
+    padding: "20px",
+    width: "90%", // Réduire la largeur du formulaire
+    maxWidth: "400px", // Largeur maximale
     margin: "20px auto",
   };
   const avatarStyle = { backgroundColor: "#1bbd7e" };
   const marginTop = { marginTop: 10 };
 
   return (
-    <Grid container>
-      <Grid item xs={false} sm={4} md={7} />
-      <Grid item xs={12} sm={8} md={5}>
+    <Grid container style={{ height: "100vh", overflow: "hidden" }}>
+      <Grid
+        item
+        xs={false}
+        sm={4}
+        md={7}
+        style={{
+          backgroundImage: `url(${image})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          height: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      />
+      <Grid item xs={12} sm={8} md={5} style={{ overflowY: "auto", height: "100vh", padding: "10px" }}>
         <Paper elevation={3} style={paperStyle}>
           <Grid align="center">
             <Avatar style={avatarStyle}>
@@ -147,60 +152,107 @@ const SignUp = () => {
               Inscription
             </Typography>
           </Grid>
-          <form onSubmit={handleSubmit}>
-            <TextField
-              fullWidth
-              label="Nom"
-              placeholder="Entrez votre nom"
-              margin="normal"
-              value={nom}
-              onChange={(e) => setNom(e.target.value)}
-              error={!!errors.nom}
-              helperText={errors.nom}
-            />
-            <TextField
-              fullWidth
-              label="Prénom"
-              placeholder="Entrez votre prénom"
-              margin="normal"
-              value={prenom}
-              onChange={(e) => setPrenom(e.target.value)}
-              error={!!errors.prenom}
-              helperText={errors.prenom}
-            />
-            <TextField
-              fullWidth
-              label="Email"
-              placeholder="Entrez votre email"
-              margin="normal"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              error={!!errors.email}
-              helperText={errors.email}
-            />
-            <TextField
-              fullWidth
-              label="Mot de passe"
-              placeholder="Entrez votre mot de passe"
-              margin="normal"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              error={!!errors.password}
-              helperText={errors.password}
-            />
-            <TextField
-              fullWidth
-              label="Confirmer le mot de passe"
-              placeholder="Confirmez votre mot de passe"
-              margin="normal"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              error={!!errors.confirmPassword}
-              helperText={errors.confirmPassword}
-            />
+
+          <form onSubmit={onSubmitForm}>
+            <Grid container spacing={1}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label={
+                    <span>
+                      Nom <span style={{ color: "red" }}>*</span>
+                    </span>
+                  }
+                  placeholder="Entrez votre nom"
+                  margin="normal"
+                  value={nom}
+                  onChange={(e) => setNom(e.target.value)}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label={
+                    <span>
+                      Prénom <span style={{ color: "red" }}>*</span>
+                    </span>
+                  }
+                  placeholder="Entrez votre prénom"
+                  margin="normal"
+                  value={prenom}
+                  onChange={(e) => setPrenom(e.target.value)}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label={
+                    <span>
+                      Email <span style={{ color: "red" }}>*</span>
+                    </span>
+                  }
+                  placeholder="Entrez votre email"
+                  margin="normal"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label={
+                    <span>
+                      Mot de passe <span style={{ color: "red" }}>*</span>
+                    </span>
+                  }
+                  placeholder="Entrez votre mot de passe"
+                  margin="normal"
+                  type={showPassword ? "text" : "password"}
+                  value={mot_de_passe}
+                  onChange={(e) => setMotDePasse(e.target.value)}
+                  required
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton onClick={() => setShowPassword(!showPassword)}>
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  label={
+                    <span>
+                      Confirmer le mot de passe <span style={{ color: "red" }}>*</span>
+                    </span>
+                  }
+                  placeholder="Confirmez votre mot de passe"
+                  margin="normal"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                          {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Grid>
+            </Grid>
+
             <FormControlLabel
               control={
                 <Checkbox
@@ -208,24 +260,23 @@ const SignUp = () => {
                   color="primary"
                   checked={conditions}
                   onChange={(e) => setConditions(e.target.checked)}
+                  required
                 />
               }
-              label="J'accepte les conditions d'utilisation"
+              label={
+                <span>
+                  J'accepte les conditions d'utilisation <span style={{ color: "red" }}>*</span>
+                </span>
+              }
             />
-            {errors.conditions && (
-              <Typography color="error" variant="body2">
-                {errors.conditions}
-              </Typography>
-            )}
+
             <Button
               type="submit"
               variant="contained"
               color="primary"
               fullWidth
               style={marginTop}
-            >
-              S'inscrire
-            </Button>
+            > S'inscrire </Button>
           </form>
           <Typography align="center" style={marginTop}>
             Ou inscrivez-vous avec :
@@ -271,13 +322,15 @@ const SignUp = () => {
           </Typography>
         </Paper>
       </Grid>
+
+      {/* Snackbar pour afficher les messages d'erreur */}
       <Snackbar
         open={openSnackbar}
         autoHideDuration={6000}
         onClose={handleCloseSnackbar}
       >
         <Alert onClose={handleCloseSnackbar} severity="error">
-          {snackbarMessage}
+          {errorMessage}
         </Alert>
       </Snackbar>
     </Grid>
