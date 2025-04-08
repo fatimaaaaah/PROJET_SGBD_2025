@@ -1,8 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Grid,
   Paper,
-  Avatar,
   Typography,
   TextField,
   Button,
@@ -13,20 +12,44 @@ import {
   IconButton,
   Snackbar,
   Alert,
+  Box,
 } from "@mui/material";
-import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import { keyframes } from "@emotion/react";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { useNavigate } from "react-router-dom";
-import GoogleIcon from "@mui/icons-material/Google";
 import MicrosoftIcon from '@mui/icons-material/Microsoft';
-import GitHubIcon from "@mui/icons-material/GitHub";
-import image from "../image/1.jpg";
+import image1 from "../image/2.jpg";
+import image2 from "../image/3.jpg";
+import image3 from "../image/4.jpg";
+import avatarImage from "../image/logo.webp";
+import axios from "axios";
+import { GoogleLogin } from '@react-oauth/google'; 
+import { PublicClientApplication } from '@azure/msal-browser';
+import GitHubLogin from 'react-github-login';
 
 
+const fadeInBackground = keyframes`
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+`;
 const SignUp = () => {
   const navigate = useNavigate();
-
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const images = [image1, image2, image3]; // Ajoutez autant d'images que nécessaire
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prevIndex) => 
+        prevIndex === images.length - 1 ? 0 : prevIndex + 1
+      );
+    }, 5000); // Change d'image toutes les 5 secondes
+  
+    return () => clearInterval(interval);
+  }, [images.length]);
   // États pour les champs du formulaire
   const [nom, setNom] = useState("");
   const [prenom, setPrenom] = useState("");
@@ -36,6 +59,104 @@ const SignUp = () => {
   const [conditions, setConditions] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+
+    //MICROSOFT 
+
+// Configuration Microsoft
+const msalConfig = {
+  auth: {
+    clientId: "VOTRE_CLIENT_ID_MICROSOFT",
+    authority: "https://login.microsoftonline.com/common",
+    redirectUri: "http://localhost:3000",
+  }
+};
+
+const msalInstance = new PublicClientApplication(msalConfig);
+
+// Fonction pour gérer la connexion Microsoft
+const handleMicrosoftLogin = async () => {
+  try {
+    const loginResponse = await msalInstance.loginPopup({
+      scopes: ["openid", "profile", "email"],
+    });
+    
+    // Envoyer le token au backend
+    const res = await axios.post("http://localhost:5000/microsoft-login", {
+      token: loginResponse.idToken
+    });
+
+    if (res.data.success) {
+      navigate("/home");
+    } else {
+      console.error("Erreur :", res.data.error);
+    }
+  } catch (error) {
+    console.error("Erreur lors de la connexion Microsoft :", error);
+  }
+};
+
+   //GITHUB
+// Fonction pour gérer la connexion GitHub réussie
+const handleGitHubLoginSuccess = async (response) => {
+  try {
+    // Envoyer le code au backend
+    const res = await axios.post("http://localhost:5000/github-login", {
+      code: response.code
+    });
+
+    if (res.data.success) {
+      navigate("/home");
+    } else {
+      console.error("Erreur :", res.data.error);
+    }
+  } catch (error) {
+    console.error("Erreur lors de la connexion GitHub :", error);
+  }
+};
+
+// Fonction pour gérer l'échec de la connexion GitHub
+const handleGitHubLoginFailure = (response) => {
+  console.error("Échec de la connexion GitHub :", response);
+};
+
+   //GOOGLE
+
+  // Fonction de succès de Google
+ // Dans votre fonction de login Google (React)
+// Add these state declarations at the top of your component with other states
+const [user, setUser] = useState(null);
+const [error, setError] = useState("");
+
+// Replace your current Google login handler with this:
+const handleGoogleLoginSuccess = async (response) => {
+  try {
+    const res = await fetch('http://localhost:5000/google-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: response.credential })
+    });
+
+    const data = await res.json();
+    
+    if (!res.ok) throw new Error(data.error || 'Erreur de connexion');
+
+    // Stocker le token
+    localStorage.setItem('token', data.token);
+    setUser(data.user);
+    navigate("/home"); // Redirect after successful login
+    
+  } catch (error) {
+    console.error('Erreur Google Login:', error);
+    setError(error.message);
+  }
+};
+
+// Update your GoogleLogin component to use the correct handler:
+  const handleGoogleLoginFailure = () => {
+    console.log("Échec de la connexion Google");
+  };
+
 
   // États pour les messages d'erreur
   const [errorMessage, setErrorMessage] = useState("");
@@ -117,10 +238,10 @@ const SignUp = () => {
 
   // Styles
   const paperStyle = {
-    padding: "20px",
-    width: "90%", // Réduire la largeur du formulaire
-    maxWidth: "400px", // Largeur maximale
-    margin: "20px auto",
+    padding: "30px 20px", // Augmentez le padding
+    width: "90%",
+    maxWidth: "400px",
+    margin: "40px auto", // Augmentez la marge
   };
   const avatarStyle = { backgroundColor: "#1bbd7e" };
   const marginTop = { marginTop: 10 };
@@ -133,22 +254,54 @@ const SignUp = () => {
         sm={4}
         md={7}
         style={{
-          backgroundImage: `url(${image})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          height: "100vh",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
+        backgroundImage: `url(${images[currentImageIndex]})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        height: "100vh",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        position: "relative",
+        transition: "background-image 0.5s ease-in-out" // Animation plus rapide
+      }}
+      >
+  {/* Indicateurs de slide */}
+  <div style={{
+    position: "absolute",
+    bottom: "20px",
+    display: "flex",
+    gap: "10px"
+  }}>
+    {images.map((_, index) => (
+      <div 
+        key={index}
+        style={{
+          width: "10px",
+          height: "10px",
+          borderRadius: "50%",
+          backgroundColor: index === currentImageIndex ? "#fff" : "rgba(255,255,255,0.5)",
+          cursor: "pointer"
         }}
+        onClick={() => setCurrentImageIndex(index)}
       />
+    ))}
+  </div>
+</Grid>
       <Grid item xs={12} sm={8} md={5} style={{ overflowY: "auto", height: "100vh", padding: "10px" }}>
         <Paper elevation={3} style={paperStyle}>
           <Grid align="center">
-            <Avatar style={avatarStyle}>
-              <LockOutlinedIcon />
-            </Avatar>
-            <Typography variant="h5" style={{ margin: "10px 0" }}>
+          <Box
+              style={{
+                width: 100,
+                height: 70,
+                margin: "0 auto 10px",
+                backgroundImage: `url(${avatarImage})`,
+                backgroundSize: "contain",
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "center"
+              }}
+            />
+          <Typography variant="h6" style={{ margin: "10px 0" }}>
               Inscription
             </Typography>
           </Grid>
@@ -158,11 +311,7 @@ const SignUp = () => {
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label={
-                    <span>
-                      Nom <span style={{ color: "red" }}>*</span>
-                    </span>
-                  }
+                  label="Nom"
                   placeholder="Entrez votre nom"
                   margin="normal"
                   value={nom}
@@ -173,11 +322,7 @@ const SignUp = () => {
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label={
-                    <span>
-                      Prénom <span style={{ color: "red" }}>*</span>
-                    </span>
-                  }
+                  label="Prénom"  
                   placeholder="Entrez votre prénom"
                   margin="normal"
                   value={prenom}
@@ -188,11 +333,7 @@ const SignUp = () => {
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label={
-                    <span>
-                      Email <span style={{ color: "red" }}>*</span>
-                    </span>
-                  }
+                  label="Email"    
                   placeholder="Entrez votre email"
                   margin="normal"
                   type="email"
@@ -204,11 +345,7 @@ const SignUp = () => {
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label={
-                    <span>
-                      Mot de passe <span style={{ color: "red" }}>*</span>
-                    </span>
-                  }
+                  label="Mot de passe"
                   placeholder="Entrez votre mot de passe"
                   margin="normal"
                   type={showPassword ? "text" : "password"}
@@ -229,11 +366,7 @@ const SignUp = () => {
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label={
-                    <span>
-                      Confirmer le mot de passe <span style={{ color: "red" }}>*</span>
-                    </span>
-                  }
+                  label=" Confirmer le mot de passe "    
                   placeholder="Confirmez votre mot de passe"
                   margin="normal"
                   type={showConfirmPassword ? "text" : "password"}
@@ -265,7 +398,7 @@ const SignUp = () => {
               }
               label={
                 <span>
-                  J'accepte les conditions d'utilisation <span style={{ color: "red" }}>*</span>
+                  J'accepte les conditions d'utilisation
                 </span>
               }
             />
@@ -283,31 +416,28 @@ const SignUp = () => {
           </Typography>
           <Grid container justifyContent="center" spacing={2} style={marginTop}>
             <Grid item>
-              <Button
-                variant="outlined"
-                startIcon={<GoogleIcon />}
-                onClick={() => console.log("Connexion avec Google")}
-              >
-                Google
-              </Button>
+            <GoogleLogin 
+                onSuccess={handleGoogleLoginSuccess}
+                onError={handleGoogleLoginFailure}
+              />
             </Grid>
             <Grid item>
               <Button
                 variant="outlined"
                 startIcon={<MicrosoftIcon />}
-                onClick={() => console.log("Connexion avec Microsoft")}
+                onClick={handleMicrosoftLogin}
               >
                 Microsoft
               </Button>
             </Grid>
             <Grid item>
-              <Button
-                variant="outlined"
-                startIcon={<GitHubIcon />}
-                onClick={() => console.log("Connexion avec GitHub")}
-              >
-                GitHub
-              </Button>
+            <GitHubLogin
+                  clientId="Ov23liXiPg89uvMwvlMY"
+                  redirectUri="http://localhost:3000/"
+                  onSuccess={handleGitHubLoginSuccess}
+                  onFailure={handleGitHubLoginFailure}
+                  className="flex items-center gap-2 bg-white text-gray-800 border border-gray-300 rounded-md px-4 py-2 font-medium hover:bg-gray-50 transition-colors"
+                />
             </Grid>
           </Grid>
           <Typography align="center" style={marginTop}>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Typography } from '@mui/material';
 
-function Dashboard() {
+const Dashboard = () => {
   return (
     <div style={{ padding: '20px' }}>
       <Typography variant="h4" gutterBottom>

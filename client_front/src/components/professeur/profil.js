@@ -1,19 +1,57 @@
-import React from 'react';
-import { Typography, TextField, Button } from '@mui/material';
+// src/components/Profil/Profil.js
+import React, { useContext } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { Box, Typography, Avatar, Paper, Divider, List, ListItem, ListItemText } from '@mui/material';
+import { Link } from 'react-router-dom';
 
-function Profile() {
+const Profil = () => {
+  const { user } = useAuth();
+
+  if (!user) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h6">Veuillez vous connecter pour voir votre profil</Typography>
+        <Link to="/login">Se connecter</Link>
+      </Box>
+    );
+  }
+
   return (
-    <div style={{ padding: '20px' }}>
-      <Typography variant="h4" gutterBottom>
-        Profil
-      </Typography>
-      <TextField label="Nom" fullWidth margin="normal" />
-      <TextField label="Email" fullWidth margin="normal" />
-      <Button variant="contained" color="primary">
-        Sauvegarder
-      </Button>
-    </div>
-  );
-}
+    <Box sx={{ p: 3, maxWidth: 600, margin: '0 auto' }}>
+      <Paper elevation={3} sx={{ p: 3 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
+          <Avatar
+            src={user.avatar}
+            alt={`${user.firstName} ${user.lastName}`}
+            sx={{ width: 100, height: 100, fontSize: 40 }}
+          >
+            {!user.avatar && `${user.firstName?.charAt(0)}${user.lastName?.charAt(0)}`}
+          </Avatar>
+          <Typography variant="h4" sx={{ mt: 2 }}>
+            {user.firstName} {user.lastName}
+          </Typography>
+          <Typography variant="subtitle1" color="text.secondary">
+            {user.email}
+          </Typography>
+        </Box>
 
-export default Profile;
+        <Divider sx={{ my: 2 }} />
+
+        <List>
+          <ListItem>
+            <ListItemText primary="Prénom" secondary={user.firstName} />
+          </ListItem>
+          <ListItem>
+            <ListItemText primary="Nom" secondary={user.lastName} />
+          </ListItem>
+          <ListItem>
+            <ListItemText primary="Email" secondary={user.email} />
+          </ListItem>
+          {/* Ajoutez d'autres informations utilisateur si nécessaire */}
+        </List>
+      </Paper>
+    </Box>
+  );
+};
+
+export default Profil;

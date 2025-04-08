@@ -1,7 +1,6 @@
 import React from 'react';
 import { Typography, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, Paper, Button } from '@mui/material';
-
-function Corrections() {
+const Corrections = () =>  {
   return (
     <div style={{ padding: '20px' }}>
       <Typography variant="h4" gutterBottom>

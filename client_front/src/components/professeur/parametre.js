@@ -1,7 +1,7 @@
 import React from 'react';
 import { Typography, Switch, FormControlLabel, Button } from '@mui/material';
 
-function Settings() {
+const Settings = () =>{
   return (
     <div style={{ padding: '20px' }}>
       <Typography variant="h4" gutterBottom>

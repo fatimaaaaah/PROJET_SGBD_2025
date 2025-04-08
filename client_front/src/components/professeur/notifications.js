@@ -1,7 +1,7 @@
 import React from 'react';
 import { Typography, List, ListItem, ListItemText } from '@mui/material';
 
-function Notifications() {
+const Notification = () => {
   return (
     <div style={{ padding: '20px' }}>
       <Typography variant="h4" gutterBottom>
@@ -19,4 +19,4 @@ function Notifications() {
   );
 }
 
-export default Notifications;
+export default Notification;

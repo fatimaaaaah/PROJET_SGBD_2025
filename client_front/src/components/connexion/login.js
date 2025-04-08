@@ -1,8 +1,7 @@
-import React, { useState } from "react";
+import React, { useState , useEffect} from "react";
 import {
   Grid,
   Paper,
-  Avatar,
   Typography,
   TextField,
   Button,
@@ -11,28 +10,32 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Box,
 } from "@mui/material";
-import { GoogleLogin } from '@react-oauth/google';
-import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-import GoogleIcon from "@mui/icons-material/Google";
 import MicrosoftIcon from '@mui/icons-material/Microsoft';
-import GitHubIcon from "@mui/icons-material/GitHub";
 import { useNavigate } from "react-router-dom";
-import image from "../image/1.jpg"; // Utilisez l'image importée
-import { keyframes } from "@emotion/react";
-
-// Animation pour l'image de fond
-const fadeInBackground = keyframes`
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
-`;
+import axios from "axios";
+import { GoogleLogin } from '@react-oauth/google'; 
+import { PublicClientApplication } from '@azure/msal-browser';
+import GitHubLogin from 'react-github-login';
+import image1 from "../image/2.jpg";
+import image2 from "../image/3.jpg";
+import image3 from "../image/4.jpg";
+import avatarImage from "../image/logo.webp";
 
 const Login = () => {
   const navigate = useNavigate();
+     const [currentImageIndex, setCurrentImageIndex] = useState(0);
+      const images = [image1, image2, image3]; // Ajoutez autant d'images que nécessaire
+      useEffect(() => {
+        const interval = setInterval(() => {
+          setCurrentImageIndex((prevIndex) => 
+            prevIndex === images.length - 1 ? 0 : prevIndex + 1
+          );
+        }, 5000); // Change d'image toutes les 5 secondes
+      
+        return () => clearInterval(interval);
+      }, [images.length]);
 
   // États pour les champs du formulaire
   const [email, setEmail] = useState("");
@@ -44,43 +47,104 @@ const Login = () => {
     password: "",
     general: "",
   });
-   //GOOGLE
 
 
-// Fonction de succès de Google
-const handleGoogleLoginSuccess = async (response) => {
-  const { credential } = response;
+  //MICROSOFT 
 
-  // Envoyer le token Google au backend
-  try {
-    const res = await fetch("http://localhost:5000/google-login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token: credential }),
-    });
-    
-    const data = await res.json();
-    if (data.success) {
-      navigate("/acceuil");
-    } else {
-      setErrors({ ...errors, general: data.error });
-    }
-  } catch (err) {
-    console.error("Erreur d'authentification Google", err);
+// Configuration Microsoft
+const msalConfig = {
+  auth: {
+    clientId: "VOTRE_CLIENT_ID_MICROSOFT",
+    authority: "https://login.microsoftonline.com/common",
+    redirectUri: "http://localhost:3000",
   }
 };
 
-const handleGoogleLoginFailure = () => {
-  console.log("Google login failed");
+const msalInstance = new PublicClientApplication(msalConfig);
+
+// Fonction pour gérer la connexion Microsoft
+const handleMicrosoftLogin = async () => {
+  try {
+    const loginResponse = await msalInstance.loginPopup({
+      scopes: ["openid", "profile", "email"],
+    });
+    
+    // Envoyer le token au backend
+    const res = await axios.post("http://localhost:5000/microsoft-login", {
+      token: loginResponse.idToken
+    });
+
+    if (res.data.success) {
+      navigate("/home");
+    } else {
+      console.error("Erreur :", res.data.error);
+    }
+  } catch (error) {
+    console.error("Erreur lors de la connexion Microsoft :", error);
+  }
+};
+  //GITHUB
+// Fonction pour gérer la connexion GitHub réussie
+const handleGitHubLoginSuccess = async (response) => {
+  try {
+    // Envoyer le code au backend
+    const res = await axios.post("http://localhost:5000/github-login", {
+      code: response.code
+    });
+
+    if (res.data.success) {
+      navigate("/home");
+    } else {
+      console.error("Erreur :", res.data.error);
+    }
+  } catch (error) {
+    console.error("Erreur lors de la connexion GitHub :", error);
+  }
 };
 
-// Intégration de Google Login dans le JSX
-<GoogleLogin
-  onSuccess={handleGoogleLoginSuccess}
-  onError={handleGoogleLoginFailure}
-/>
+// Fonction pour gérer l'échec de la connexion GitHub
+const handleGitHubLoginFailure = (response) => {
+  console.error("Échec de la connexion GitHub :", response);
+};
 
+   //GOOGLE
 
+  // Fonction de succès de Google
+ // Dans votre fonction de login Google (React)
+// Add these state declarations at the top of your component with other states
+const [user, setUser] = useState(null);
+const [error, setError] = useState("");
+
+// Replace your current Google login handler with this:
+const handleGoogleLoginSuccess = async (response) => {
+  try {
+    const res = await fetch('http://localhost:5000/google-login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: response.credential })
+    });
+
+    const data = await res.json();
+    
+    if (!res.ok) throw new Error(data.error || 'Erreur de connexion');
+
+    // Stocker le token
+    localStorage.setItem('token', data.token);
+    setUser(data.user);
+    navigate("/home"); // Redirect after successful login
+    
+  } catch (error) {
+    console.error('Erreur Google Login:', error);
+    setError(error.message);
+  }
+};
+
+// Update your GoogleLogin component to use the correct handler:
+  const handleGoogleLoginFailure = () => {
+    console.log("Échec de la connexion Google");
+  };
+
+     
     // États pour la gestion de la boîte d'alerte (mot de passe oublié)
     const [openDialog, setOpenDialog] = useState(false);
     const [resetEmail, setResetEmail] = useState("");
@@ -147,7 +211,7 @@ const handleGoogleLoginFailure = () => {
   // Gestion de la soumission du formulaire
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     if (validateForm()) {
       try {
         const response = await fetch("http://localhost:5000/login", {
@@ -155,14 +219,13 @@ const handleGoogleLoginFailure = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, mot_de_passe: password }),
         });
-
+  
         const data = await response.json();
-
+  
         if (response.ok) {
-          // Connexion réussie, rediriger vers la page d'accueil
-          navigate("/acceuil");
+          localStorage.setItem("token", data.token); // <-- Correction ici
+          navigate("/home");
         } else {
-          // Afficher l'erreur renvoyée par le backend
           setErrors({ ...errors, general: data.error });
         }
       } catch (err) {
@@ -171,7 +234,7 @@ const handleGoogleLoginFailure = () => {
       }
     }
   };
-
+  
   const paperStyle = {
     padding: "30px 20px",
     width: 400, // Largeur augmentée du formulaire
@@ -184,36 +247,60 @@ const handleGoogleLoginFailure = () => {
   const marginTop = { marginTop: 10 };
 
   return (
-    <Grid container style={{ height: "100vh" }}>
-      <Grid
-        item
-        xs={12}
-        sm={6}
-        container
-        justifyContent="center"
-        alignItems="center"
-        style={{
-          backgroundImage: `url(${image})`, // Utilisation de l'image
-          backgroundSize: "contain",  // Ajuster la taille de l'image pour qu'elle soit contenue
-          backgroundPosition: "center",
-          animation: `${fadeInBackground} 2s ease-in-out`, // Animation de l'image
-          height: "100vh", // Réduction de la hauteur de l'image
-          backgroundRepeat: "no-repeat", // Empêche l'image de se répéter
-        }}
-      />
-      <Grid
-        item
-        xs={12}
-        sm={6}
-        container
-        alignItems="center"
-        justifyContent="center"
-      >
+    <Grid container style={{ height: "100vh" , overflow: "hidden" }}>
+            <Grid
+              item
+              xs={false}
+              sm={4}
+              md={7}
+              style={{
+              backgroundImage: `url(${images[currentImageIndex]})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              height: "100vh",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              position: "relative",
+              transition: "background-image 0.5s ease-in-out" // Animation plus rapide
+            }}
+            >
+        {/* Indicateurs de slide */}
+        <div style={{
+          position: "absolute",
+          bottom: "20px",
+          display: "flex",
+          gap: "10px"
+        }}>
+          {images.map((_, index) => (
+            <div 
+              key={index}
+              style={{
+                width: "10px",
+                height: "10px",
+                borderRadius: "50%",
+                backgroundColor: index === currentImageIndex ? "#fff" : "rgba(255,255,255,0.5)",
+                cursor: "pointer"
+              }}
+              onClick={() => setCurrentImageIndex(index)}
+            />
+          ))}
+        </div>
+      </Grid>
+      <Grid item xs={12} sm={8} md={5} style={{ overflowY: "auto", height: "100vh", padding: "10px" }}>
         <Paper elevation={3} style={paperStyle}>
           <Grid align="center">
-            <Avatar style={avatarStyle}>
-              <LockOutlinedIcon />
-            </Avatar>
+          <Box
+              style={{
+                width: 100,
+                height: 70,
+                margin: "0 auto 10px",
+                backgroundImage: `url(${avatarImage})`,
+                backgroundSize: "contain",
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "center"
+              }}
+            />
             <Typography variant="h5" style={{ margin: "10px 0" }}>
               Connexion
             </Typography>
@@ -263,31 +350,36 @@ const handleGoogleLoginFailure = () => {
           {/* Alignement des boutons de connexion dans un Grid */}
           <Grid container justifyContent="center" spacing={2} style={marginTop}>
             <Grid item>
-              <Button
-                variant="outlined"
-                startIcon={<GoogleIcon />}
-                onClick={() => console.log("Connexion avec Google")}
-              >
-                Google
-              </Button>
+            <GoogleLogin 
+                onSuccess={handleGoogleLoginSuccess}
+                onError={handleGoogleLoginFailure}
+              />
+
+                  {/* <Button
+                    variant="outlined"
+                    startIcon={<GoogleIcon />}
+                    onClick={loginWithGoogle} // Déclenche la connexion Google
+                  >
+                    Google
+                  </Button> */}
             </Grid>
             <Grid item>
               <Button
                 variant="outlined"
                 startIcon={<MicrosoftIcon />}
-                onClick={() => console.log("Connexion avec Microsoft")}
+                onClick={handleMicrosoftLogin}
               >
                 Microsoft
               </Button>
             </Grid>
             <Grid item>
-              <Button
-                variant="outlined"
-                startIcon={<GitHubIcon />}
-                onClick={() => console.log("Connexion avec GitHub")}
-              >
-                GitHub
-              </Button>
+            <GitHubLogin
+                  clientId="Ov23liXiPg89uvMwvlMY"
+                  redirectUri="http://localhost:3000/"
+                  onSuccess={handleGitHubLoginSuccess}
+                  onFailure={handleGitHubLoginFailure}
+                  className="flex items-center gap-2 bg-white text-gray-800 border border-gray-300 rounded-md px-4 py-2 font-medium hover:bg-gray-50 transition-colors"
+                />
             </Grid>
             <Typography align="center" style={marginTop}>
             Mot de passe {" "}
@@ -325,8 +417,8 @@ const handleGoogleLoginFailure = () => {
           <Typography align="center" style={marginTop}>
             Pas encore de compte ?{" "}
             <Link
-              href="#"
-              onClick={() => navigate("/signup")}
+              href="http://localhost:3000/signup"
+              onClick={() => navigate("/signUp")} 
               style={{ cursor: "pointer" }}
             >
               S'inscrire
