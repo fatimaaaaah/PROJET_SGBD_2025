@@ -18,3 +18,16 @@ grant all privileges on database CLASSROOM to administrateur;
 select * from professeur;
 
 http://localhost:5000/professeurs requete post
+
+git init 
+git remote add origin https://github.com/fatimaaaaah/PROJET_SGBD_2025
+git add .
+git commit -m "Premier commit"
+git config --global user.name "fatimaaaaah"
+git config --global user.email "fatimadiouf308@gmail.com"
+git push -u origin main
+
+ALTER TABLE professeur DROP COLUMN confirmpassword;
+nodemon index
+nguenarfall@gmail.com
+Passer123@

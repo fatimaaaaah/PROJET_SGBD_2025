@@ -1,9 +1,10 @@
 import React from 'react';
 import { Typography } from '@mui/material';
-
+import Navbar from '../Navbar/navbar';
 const UserManual = () => {
   return (
     <div style={{ padding: '20px' }}>
+       <Navbar/>
       <Typography variant="h4" gutterBottom>
         Manuel d'Utilisation
       </Typography>

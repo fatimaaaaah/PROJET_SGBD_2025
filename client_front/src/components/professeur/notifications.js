@@ -1,9 +1,10 @@
 import React from 'react';
 import { Typography, List, ListItem, ListItemText } from '@mui/material';
-
+import Navbar from '../Navbar/navbar';
 const Notification = () => {
   return (
     <div style={{ padding: '20px' }}>
+       <Navbar/>
       <Typography variant="h4" gutterBottom>
         Notifications
       </Typography>

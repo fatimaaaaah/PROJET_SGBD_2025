@@ -13,15 +13,19 @@ CREATE TABLE Professeur (
     prenom VARCHAR(100),
     email VARCHAR(100),
     mot_de_passe VARCHAR(255),
-
+    auth_provider VARCHAR(50) DEFAULT 'local';
+    --google_id VARCHAR(255);
+);
+-- Table Note
+CREATE TABLE Note (
+    note FLOAT,
+    idProf_N INT,
+    idEtu_N INT,
+    FOREIGN KEY (idProf_N) REFERENCES Professeur(idProf),
+    FOREIGN KEY (idEtu_N) REFERENCES Etudiant(idEtu)
 );
 
--- Table Cours
-CREATE TABLE Cours (
-    idCours SERIAL PRIMARY KEY,
-    nom VARCHAR(100),
-    code VARCHAR(100)
-);
+
 
 -- Table Etudiant
 CREATE TABLE Etudiant (
@@ -33,22 +37,26 @@ CREATE TABLE Etudiant (
     mot_de_passe VARCHAR(255),
 );
 
--- Table Note
-CREATE TABLE Note (
-    note FLOAT,
-    idProf_N INT,
-    idEtu_N INT,
-    FOREIGN KEY (idProf_N) REFERENCES Professeur(idProf),
-    FOREIGN KEY (idEtu_N) REFERENCES Etudiant(idEtu)
+-- Table cours
+CREATE TABLE cours (
+    idcours SERIAL PRIMARY KEY,
+    nom VARCHAR(255) NOT NULL,
+    code VARCHAR(50) UNIQUE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Table Sujet
-CREATE TABLE Sujet (
-    idSujet SERIAL PRIMARY KEY,
-    titre VARCHAR(100),
-    date_depot DATE,
-    date_fin DATE,
-    description VARCHAR(100)
+-- Table sujet
+CREATE TABLE sujet (
+    idsujet SERIAL PRIMARY KEY,
+    titre VARCHAR(100) NOT NULL,
+    description TEXT,
+    date_depot DATE NOT NULL DEFAULT CURRENT_DATE,
+    date_fin DATE NOT NULL,
+    fichier_pdf VARCHAR(255),
+    idprof INTEGER NOT NULL REFERENCES professeur(idprof),
+    idcours INTEGER NOT NULL REFERENCES cours(idcours) ON DELETE CASCADE,
+    type_sujet VARCHAR(20),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Table Modele

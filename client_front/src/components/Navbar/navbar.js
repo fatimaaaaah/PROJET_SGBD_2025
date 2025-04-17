@@ -36,7 +36,7 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
 
   const bottomMenuItems = [
     { text: 'Manuel Utilisateur', link: '/manuel', icon: <HelpOutlineOutlinedIcon /> },
-    { text: 'Se Déconnecter', link: '/', icon: <ExitToAppOutlinedIcon />, action: logout },
+    { text: 'Se Déconnecter', link: '/login', icon: <ExitToAppOutlinedIcon />, action: logout },
   ];
 
   return (
