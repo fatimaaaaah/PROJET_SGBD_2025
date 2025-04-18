@@ -206,7 +206,7 @@ const Acceuil = () => {
       <Box sx={{ height: '10px' }} />
 
       {/* Footer en fond blanc */}
-{/* Footer */}
+      {/* Footer */}
 <Box sx={(theme) => ({ 
   backgroundColor: theme.palette.background.paper,
   color: theme.palette.text.primary,
@@ -214,7 +214,8 @@ const Acceuil = () => {
   borderTop: `1px solid ${theme.palette.divider}`
 })}>
   <Container maxWidth="lg">
-    <Grid container spacing={2} alignItems="flex-start"> {/* Réduit le spacing de 3 à 2 */}
+    {/* Modification principale ici : spacing augmenté de 2 à 6 */}
+    <Grid container spacing={6} alignItems="flex-start">
       {/* Newsletter */}
       <Grid item xs={12} md={6}>
         <Box>
@@ -222,7 +223,7 @@ const Acceuil = () => {
           <Typography paragraph sx={{ mb: 2 }}>
             Abonnez-vous à notre newsletter pour recevoir les dernières actualités...
           </Typography>
-          <Box component="form" sx={{ display: 'flex', gap: 1 }}> {/* Réduit le gap de 2 à 1 */}
+          <Box component="form" sx={{ display: 'flex', gap: 1 }}>
             <TextField
               variant="outlined"
               placeholder="Entrez votre adresse email"
@@ -243,11 +244,11 @@ const Acceuil = () => {
       </Grid>
      
       {/* Contact et Adresse groupés */}
-      <Grid item xs={12} md={6} container spacing={2}> {/* Nouvelle grille interne */}
+      <Grid item xs={12} md={6} container spacing={12}>
         {/* Contact */}
         <Grid item xs={12} sm={6}>
-          <Box>
-            <Typography variant="h6" gutterBottom sx={{ mb: 1 }}>Contact</Typography> {/* Réduit le gutterBottom */}
+          <Box sx={{ mb: 3 }}>
+            <Typography variant="h6" gutterBottom sx={{ mb: 1 }}>Contact</Typography>
             <Typography sx={{ mb: 1 }}>
               Email: <Link href="mailto:contact@platforme.com" color="primary">contact@platforme.com</Link>
             </Typography>
@@ -260,7 +261,7 @@ const Acceuil = () => {
         {/* Adresse */}
         <Grid item xs={12} sm={6}>
           <Box>
-            <Typography variant="h6" gutterBottom sx={{ mb: 1 }}>Adresse</Typography> {/* Réduit le gutterBottom */}
+            <Typography variant="h6" gutterBottom sx={{ mb: 1 }}>Adresse</Typography>
             <Typography sx={{ mb: 0 }}>
               123 Rue Exemple<br />
               75000 Paris<br />

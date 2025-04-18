@@ -92,114 +92,116 @@ const Home = () => {
     <div style={{ padding: '20px', backgroundColor: darkMode ? '#121212' : '#fff', color: darkMode ? '#fff' : '#000', marginTop: '80px' }}>
       <Navbar/>
       {/* Cartes de Statistiques */}
-      <Grid container spacing={3}>
-        <Grid item xs={3}>
-          <Card style={{ border: '1px solid #1976d2', borderRadius: '10px' }}>
-            <CardContent>
-              <Typography variant="h5" style={{ fontSize: '1.2rem', display: 'flex', alignItems: 'center' }}>
-                <AssignmentIcon style={{ marginRight: '10px' }} />
-                Sujets déposés
-              </Typography>
-              <Typography variant="h3" style={{ fontSize: '2rem' }}>15</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={3}>
-          <Card style={{ border: '1px solid #1976d2', borderRadius: '10px' }}>
-            <CardContent>
-              <Typography variant="h5" style={{ fontSize: '1.2rem', display: 'flex', alignItems: 'center' }}>
-                <DashboardIcon style={{ marginRight: '10px' }} />
-                Copies corrigées
-              </Typography>
-              <Typography variant="h3" style={{ fontSize: '2rem' }}>120</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={3}>
-          <Card style={{ border: '1px solid #1976d2', borderRadius: '10px' }}>
-            <CardContent>
-              <Typography variant="h5" style={{ fontSize: '1.2rem', display: 'flex', alignItems: 'center' }}>
-                <SettingsIcon style={{ marginRight: '10px' }} />
-                Taux de réussite
-              </Typography>
-              <Typography variant="h3" style={{ fontSize: '2rem' }}>75%</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={3}>
-          <Card style={{ border: '1px solid #1976d2', borderRadius: '10px' }}>
-            <CardContent>
-              <Typography variant="h5" style={{ fontSize: '1.2rem', display: 'flex', alignItems: 'center' }}>
-                <AccountCircleIcon style={{ marginRight: '10px' }} />
-                Étudiants actifs
-              </Typography>
-              <Typography variant="h3" style={{ fontSize: '2rem' }}>50</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+      <Grid container spacing={15}> {/* Increased the spacing here */}
+  <Grid item xs={3}>
+    <Card style={{ border: '1px solid #1976d2', borderRadius: '10px' }}>
+      <CardContent>
+        <Typography variant="h5" style={{ fontSize: '1.2rem', display: 'flex', alignItems: 'center' }}>
+          <AssignmentIcon style={{ marginRight: '10px' }} />
+          Sujets déposés
+        </Typography>
+        <Typography variant="h3" style={{ fontSize: '2rem' }}>15</Typography>
+      </CardContent>
+    </Card>
+  </Grid>
+  <Grid item xs={3}>
+    <Card style={{ border: '1px solid #1976d2', borderRadius: '10px' }}>
+      <CardContent>
+        <Typography variant="h5" style={{ fontSize: '1.2rem', display: 'flex', alignItems: 'center' }}>
+          <DashboardIcon style={{ marginRight: '10px' }} />
+          Copies corrigées
+        </Typography>
+        <Typography variant="h3" style={{ fontSize: '2rem' }}>120</Typography>
+      </CardContent>
+    </Card>
+  </Grid>
+  <Grid item xs={3}>
+    <Card style={{ border: '1px solid #1976d2', borderRadius: '10px' }}>
+      <CardContent>
+        <Typography variant="h5" style={{ fontSize: '1.2rem', display: 'flex', alignItems: 'center' }}>
+          <SettingsIcon style={{ marginRight: '10px' }} />
+          Taux de réussite
+        </Typography>
+        <Typography variant="h3" style={{ fontSize: '2rem' }}>75%</Typography>
+      </CardContent>
+    </Card>
+  </Grid>
+  <Grid item xs={3}>
+    <Card style={{ border: '1px solid #1976d2', borderRadius: '10px' }}>
+      <CardContent>
+        <Typography variant="h5" style={{ fontSize: '1.2rem', display: 'flex', alignItems: 'center' }}>
+          <AccountCircleIcon style={{ marginRight: '10px' }} />
+          Étudiants actifs
+        </Typography>
+        <Typography variant="h3" style={{ fontSize: '2rem' }}>50</Typography>
+      </CardContent>
+    </Card>
+  </Grid>
+</Grid>
 
-      {/* Graphiques de visualisation des performances */}
-      <Typography variant="h5" style={{ marginTop: '40px', fontSize: '1.5rem' }}>
-        Visualisation des performances
-      </Typography>
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={performanceData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="name" />
-          <YAxis />
-          <Tooltip />
-          <Legend />
-          <Bar dataKey="pv" fill="#1976d2" name="Performances" />
-          <Bar dataKey="uv" fill="#82ca9d" name="Autre métrique" />
-        </BarChart>
-      </ResponsiveContainer>
+{/* Graphiques de visualisation des performances */}
+<Typography variant="h5" style={{ marginTop: '40px', fontSize: '1.5rem' }}>
+  Visualisation des performances
+</Typography>
+<ResponsiveContainer width="100%" height={300}>
+  <BarChart data={performanceData}>
+    <CartesianGrid strokeDasharray="3 3" />
+    <XAxis dataKey="name" />
+    <YAxis />
+    <Tooltip />
+    <Legend />
+    <Bar dataKey="pv" fill="#1976d2" name="Performances" />
+    <Bar dataKey="uv" fill="#82ca9d" name="Autre métrique" />
+  </BarChart>
+</ResponsiveContainer>
 
-      {/* Deux graphiques côte à côte */}
-      <Grid container spacing={3} style={{ marginTop: '20px' }}>
-        <Grid item xs={6}>
-          <Typography variant="h6" style={{ fontSize: '1.2rem', marginBottom: '10px' }}>
-            Nombre d'étudiants par note
-          </Typography>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={studentGradesData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="students" fill="#1976d2" name="Nombre d'étudiants" />
-            </BarChart>
-          </ResponsiveContainer>
-        </Grid>
-        <Grid item xs={6}>
-          <Typography variant="h6" style={{ fontSize: '1.2rem', marginBottom: '10px' }}>
-            Statut des corrections
-          </Typography>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={statusData}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={80}
-                fill="#8884d8"
-                paddingAngle={5}
-                dataKey="value"
-                label
-              >
-                {statusData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        </Grid>
-      </Grid>
+{/* Deux graphiques côte à côte */}
+<Grid container spacing={15} style={{ marginTop: '30px' }}> {/* Increased the spacing here */}
+  <Grid item xs={10}>
+    <Typography variant="h6" style={{ fontSize: '1.2rem', marginBottom: '10px' }}>
+      Nombre d'étudiants par note
+    </Typography>
+    <ResponsiveContainer width="100%" height={300}>
+      <BarChart data={studentGradesData}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="name" />
+        <YAxis />
+        <Tooltip />
+        <Legend />
+        <Bar dataKey="students" fill="#1976d2" name="Nombre d'étudiants" />
+      </BarChart>
+    </ResponsiveContainer>
+  </Grid>
+  <Grid item xs={6}>
+    <Typography variant="h6" style={{ fontSize: '1.2rem', marginBottom: '10px' }}>
+      Statut des corrections
+    </Typography>
+    <ResponsiveContainer width="100%" height={300}>
+      <PieChart>
+        <Pie
+          data={statusData}
+          cx="50%"
+          cy="50%"
+          innerRadius={60}
+          outerRadius={80}
+          fill="#8884d8"
+          paddingAngle={5}
+          dataKey="value"
+          label
+        >
+          {statusData.map((entry, index) => (
+            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+          ))}
+        </Pie>
+        <Tooltip />
+        <Legend />
+      </PieChart>
+    </ResponsiveContainer>
+  </Grid>
+</Grid>
 
+
+     
       {/* Filtres pour les dernières soumissions */}
     <Box style={{ marginTop: '40px', marginBottom: '20px' }}>
   

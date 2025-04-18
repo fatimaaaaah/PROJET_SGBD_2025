@@ -24,7 +24,7 @@ import image2 from "../image/3.jpg";
 import image3 from "../image/4.jpg";
 import avatarImage from "../image/logo.webp";
 import axios from "axios";
-import { GoogleLogin } from '@react-oauth/google'; 
+import { GoogleLogin } from '@react-oauth/google';
 import { PublicClientApplication } from '@azure/msal-browser';
 import GitHubLogin from 'react-github-login';
 
@@ -43,11 +43,11 @@ const SignUp = () => {
   const images = [image1, image2, image3]; // Ajoutez autant d'images que nécessaire
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentImageIndex((prevIndex) => 
+      setCurrentImageIndex((prevIndex) =>
         prevIndex === images.length - 1 ? 0 : prevIndex + 1
       );
     }, 5000); // Change d'image toutes les 5 secondes
-  
+
     return () => clearInterval(interval);
   }, [images.length]);
   // États pour les champs du formulaire
@@ -61,98 +61,98 @@ const SignUp = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
 
-    //MICROSOFT 
+  //MICROSOFT 
 
-// Configuration Microsoft
-const msalConfig = {
-  auth: {
-    clientId: "VOTRE_CLIENT_ID_MICROSOFT",
-    authority: "https://login.microsoftonline.com/common",
-    redirectUri: "http://localhost:3000",
-  }
-};
-
-const msalInstance = new PublicClientApplication(msalConfig);
-
-// Fonction pour gérer la connexion Microsoft
-const handleMicrosoftLogin = async () => {
-  try {
-    const loginResponse = await msalInstance.loginPopup({
-      scopes: ["openid", "profile", "email"],
-    });
-    
-    // Envoyer le token au backend
-    const res = await axios.post("http://localhost:5000/microsoft-login", {
-      token: loginResponse.idToken
-    });
-
-    if (res.data.success) {
-      navigate("/home");
-    } else {
-      console.error("Erreur :", res.data.error);
+  // Configuration Microsoft
+  const msalConfig = {
+    auth: {
+      clientId: "VOTRE_CLIENT_ID_MICROSOFT",
+      authority: "https://login.microsoftonline.com/common",
+      redirectUri: "http://localhost:3000",
     }
-  } catch (error) {
-    console.error("Erreur lors de la connexion Microsoft :", error);
-  }
-};
+  };
 
-   //GITHUB
-// Fonction pour gérer la connexion GitHub réussie
-const handleGitHubLoginSuccess = async (response) => {
-  try {
-    // Envoyer le code au backend
-    const res = await axios.post("http://localhost:5000/github-login", {
-      code: response.code
-    });
+  const msalInstance = new PublicClientApplication(msalConfig);
 
-    if (res.data.success) {
-      navigate("/home");
-    } else {
-      console.error("Erreur :", res.data.error);
+  // Fonction pour gérer la connexion Microsoft
+  const handleMicrosoftLogin = async () => {
+    try {
+      const loginResponse = await msalInstance.loginPopup({
+        scopes: ["openid", "profile", "email"],
+      });
+
+      // Envoyer le token au backend
+      const res = await axios.post("http://localhost:5000/microsoft-login", {
+        token: loginResponse.idToken
+      });
+
+      if (res.data.success) {
+        navigate("/home");
+      } else {
+        console.error("Erreur :", res.data.error);
+      }
+    } catch (error) {
+      console.error("Erreur lors de la connexion Microsoft :", error);
     }
-  } catch (error) {
-    console.error("Erreur lors de la connexion GitHub :", error);
-  }
-};
+  };
 
-// Fonction pour gérer l'échec de la connexion GitHub
-const handleGitHubLoginFailure = (response) => {
-  console.error("Échec de la connexion GitHub :", response);
-};
+  //GITHUB
+  // Fonction pour gérer la connexion GitHub réussie
+  const handleGitHubLoginSuccess = async (response) => {
+    try {
+      // Envoyer le code au backend
+      const res = await axios.post("http://localhost:5000/github-login", {
+        code: response.code
+      });
 
-   //GOOGLE
+      if (res.data.success) {
+        navigate("/home");
+      } else {
+        console.error("Erreur :", res.data.error);
+      }
+    } catch (error) {
+      console.error("Erreur lors de la connexion GitHub :", error);
+    }
+  };
+
+  // Fonction pour gérer l'échec de la connexion GitHub
+  const handleGitHubLoginFailure = (response) => {
+    console.error("Échec de la connexion GitHub :", response);
+  };
+
+  //GOOGLE
 
   // Fonction de succès de Google
- // Dans votre fonction de login Google (React)
-// Add these state declarations at the top of your component with other states
-const [user, setUser] = useState(null);
-const [error, setError] = useState("");
+  // Dans votre fonction de login Google (React)
+  // Add these state declarations at the top of your component with other states
+  const [user, setUser] = useState(null);
+  const [error, setError] = useState("");
 
-// Replace your current Google login handler with this:
-const handleGoogleLoginSuccess = async (response) => {
-  try {
-    const res = await fetch('http://localhost:5000/google-login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: response.credential })
-    });
+  // Replace your current Google login handler with this:
+  const handleGoogleLoginSuccess = async (response) => {
+    try {
+      const res = await fetch('http://localhost:5000/google-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: response.credential })
+      });
 
-    const data = await res.json();
-    
-    if (!res.ok) throw new Error(data.error || 'Erreur de connexion');
+      const data = await res.json();
 
-    // Stocker le token
-    localStorage.setItem('token', data.token);
-    setUser(data.user);
-    navigate("/home"); // Redirect after successful login
-    
-  } catch (error) {
-    console.error('Erreur Google Login:', error);
-    setError(error.message);
-  }
-};
+      if (!res.ok) throw new Error(data.error || 'Erreur de connexion');
 
-// Update your GoogleLogin component to use the correct handler:
+      // Stocker le token
+      localStorage.setItem('token', data.token);
+      setUser(data.user);
+      navigate("/home"); // Redirect after successful login
+
+    } catch (error) {
+      console.error('Erreur Google Login:', error);
+      setError(error.message);
+    }
+  };
+
+  // Update your GoogleLogin component to use the correct handler:
   const handleGoogleLoginFailure = () => {
     console.log("Échec de la connexion Google");
   };
@@ -174,63 +174,63 @@ const handleGoogleLoginSuccess = async (response) => {
 
     // Validation des champs obligatoires
     if (!nom || !prenom || !email || !mot_de_passe || !confirmPassword) {
-        setErrorMessage("Tous les champs sont obligatoires.");
-        setOpenSnackbar(true);
-        return;
+      setErrorMessage("Tous les champs sont obligatoires.");
+      setOpenSnackbar(true);
+      return;
     }
 
     // Validation des conditions d'utilisation
     if (!conditions) {
-        setErrorMessage("Vous devez accepter les conditions d'utilisation.");
-        setOpenSnackbar(true);
-        return;
+      setErrorMessage("Vous devez accepter les conditions d'utilisation.");
+      setOpenSnackbar(true);
+      return;
     }
 
     // Validation du mot de passe et de la confirmation
     if (mot_de_passe !== confirmPassword) {
-        setErrorMessage("Les mots de passe ne correspondent pas.");
-        setOpenSnackbar(true);
-        return;
+      setErrorMessage("Les mots de passe ne correspondent pas.");
+      setOpenSnackbar(true);
+      return;
     }
 
     // Validation de la complexité du mot de passe
     if (!validatePassword(mot_de_passe)) {
-        setErrorMessage(
-            "Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial."
-        );
-        setOpenSnackbar(true);
-        return;
+      setErrorMessage(
+        "Le mot de passe doit contenir au moins 8 caractères, une majuscule, une minuscule, un chiffre et un caractère spécial."
+      );
+      setOpenSnackbar(true);
+      return;
     }
 
     try {
-        const body = {
-            nom,
-            prenom,
-            email,
-            mot_de_passe,
-        };
-        const response = await fetch("http://localhost:5000/professeurs", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-        });
+      const body = {
+        nom,
+        prenom,
+        email,
+        mot_de_passe,
+      };
+      const response = await fetch("http://localhost:5000/professeurs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
 
-        const data = await response.json();
+      const data = await response.json();
 
-        if (response.ok) {
-            // Redirection vers la page d'accueil après une inscription réussie
-            navigate("/home");
-        } else {
-            // Afficher le message d'erreur renvoyé par le backend
-            setErrorMessage(data.error || "Erreur lors de l'inscription. Veuillez réessayer.");
-            setOpenSnackbar(true);
-        }
-    } catch (err) {
-        console.error(err.message);
-        setErrorMessage("Une erreur s'est produite. Veuillez réessayer.");
+      if (response.ok) {
+        // Redirection vers la page d'accueil après une inscription réussie
+        navigate("/home");
+      } else {
+        // Afficher le message d'erreur renvoyé par le backend
+        setErrorMessage(data.error || "Erreur lors de l'inscription. Veuillez réessayer.");
         setOpenSnackbar(true);
+      }
+    } catch (err) {
+      console.error(err.message);
+      setErrorMessage("Une erreur s'est produite. Veuillez réessayer.");
+      setOpenSnackbar(true);
     }
-};
+  };
   // Fermer le Snackbar
   const handleCloseSnackbar = () => {
     setOpenSnackbar(false);
@@ -238,59 +238,30 @@ const handleGoogleLoginSuccess = async (response) => {
 
   // Styles
   const paperStyle = {
-    padding: "30px 20px", // Augmentez le padding
-    width: "90%",
-    maxWidth: "400px",
-    margin: "40px auto", // Augmentez la marge
+    padding: "30px 20px",
+    width: 450, // Largeur augmentée du formulaire
+    minHeight: 450, // Hauteur augmentée
+    margin: "20px auto",
+    borderRadius: "10px", // Bords arrondis pour le formulaire
   };
-  const avatarStyle = { backgroundColor: "#1bbd7e" };
+
   const marginTop = { marginTop: 10 };
 
   return (
-    <Grid container style={{ height: "100vh", overflow: "hidden" }}>
-      <Grid
-        item
-        xs={false}
-        sm={4}
-        md={7}
-        style={{
+    <Grid container style={{ height: "100vh" }}>
+      <Grid item sx={{
+        width: "50vh",
+        height: "100vh", // Assurez-vous que l'image prend toute la hauteur
         backgroundImage: `url(${images[currentImageIndex]})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
-        height: "100vh",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        position: "relative",
-        transition: "background-image 0.5s ease-in-out" // Animation plus rapide
-      }}
-      >
-  {/* Indicateurs de slide */}
-  <div style={{
-    position: "absolute",
-    bottom: "20px",
-    display: "flex",
-    gap: "10px"
-  }}>
-    {images.map((_, index) => (
-      <div 
-        key={index}
-        style={{
-          width: "10px",
-          height: "10px",
-          borderRadius: "50%",
-          backgroundColor: index === currentImageIndex ? "#fff" : "rgba(255,255,255,0.5)",
-          cursor: "pointer"
-        }}
-        onClick={() => setCurrentImageIndex(index)}
-      />
-    ))}
-  </div>
-</Grid>
+        flex: 1,
+        zIndex: -1 // Assurez-vous que l'image ne recouvre pas le formulaire
+      }} />
       <Grid item xs={12} sm={8} md={5} style={{ overflowY: "auto", height: "100vh", padding: "10px" }}>
         <Paper elevation={3} style={paperStyle}>
           <Grid align="center">
-          <Box
+            <Box
               style={{
                 width: 100,
                 height: 70,
@@ -301,7 +272,7 @@ const handleGoogleLoginSuccess = async (response) => {
                 backgroundPosition: "center"
               }}
             />
-          <Typography variant="h6" style={{ margin: "10px 0" }}>
+            <Typography variant="h6" style={{ margin: "10px 0" }}>
               Inscription
             </Typography>
           </Grid>
@@ -322,7 +293,7 @@ const handleGoogleLoginSuccess = async (response) => {
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label="Prénom"  
+                  label="Prénom"
                   placeholder="Entrez votre prénom"
                   margin="normal"
                   value={prenom}
@@ -332,8 +303,9 @@ const handleGoogleLoginSuccess = async (response) => {
               </Grid>
               <Grid item xs={12}>
                 <TextField
+                 sx={{ width: '203%' }}  
                   fullWidth
-                  label="Email"    
+                  label="Email"
                   placeholder="Entrez votre email"
                   margin="normal"
                   type="email"
@@ -366,7 +338,7 @@ const handleGoogleLoginSuccess = async (response) => {
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label=" Confirmer le mot de passe "    
+                  label=" Confirmer le mot de passe "
                   placeholder="Confirmez votre mot de passe"
                   margin="normal"
                   type={showConfirmPassword ? "text" : "password"}
@@ -416,7 +388,7 @@ const handleGoogleLoginSuccess = async (response) => {
           </Typography>
           <Grid container justifyContent="center" spacing={2} style={marginTop}>
             <Grid item>
-            <GoogleLogin 
+              <GoogleLogin
                 onSuccess={handleGoogleLoginSuccess}
                 onError={handleGoogleLoginFailure}
               />
@@ -431,13 +403,13 @@ const handleGoogleLoginSuccess = async (response) => {
               </Button>
             </Grid>
             <Grid item>
-            <GitHubLogin
-                  clientId="Ov23liXiPg89uvMwvlMY"
-                  redirectUri="http://localhost:3000/"
-                  onSuccess={handleGitHubLoginSuccess}
-                  onFailure={handleGitHubLoginFailure}
-                  className="flex items-center gap-2 bg-white text-gray-800 border border-gray-300 rounded-md px-4 py-2 font-medium hover:bg-gray-50 transition-colors"
-                />
+              <GitHubLogin
+                clientId="Ov23liXiPg89uvMwvlMY"
+                redirectUri="http://localhost:3000/"
+                onSuccess={handleGitHubLoginSuccess}
+                onFailure={handleGitHubLoginFailure}
+                className="flex items-center gap-2 bg-white text-gray-800 border border-gray-300 rounded-md px-4 py-2 font-medium hover:bg-gray-50 transition-colors"
+              />
             </Grid>
           </Grid>
           <Typography align="center" style={marginTop}>

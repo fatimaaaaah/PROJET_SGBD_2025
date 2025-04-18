@@ -1,6 +1,19 @@
 import React, { useState } from 'react';
-import { AppBar, Toolbar, Typography, IconButton, Drawer, List, ListItem, ListItemText, Box, Avatar, Divider } from '@mui/material';
-import { Link, useLocation } from 'react-router-dom';
+import { 
+  AppBar, 
+  Toolbar, 
+  Typography, 
+  IconButton, 
+  Drawer, 
+  List, 
+  ListItem, 
+  ListItemText, 
+  Box, 
+  Avatar, 
+  Divider,
+  Badge
+} from '@mui/material';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import MenuIcon from '@mui/icons-material/Menu';
 import NotificationsActiveOutlinedIcon from '@mui/icons-material/NotificationsActiveOutlined';
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
@@ -17,13 +30,19 @@ import { useAuth } from '../../context/AuthContext';
 const Navbar = ({ darkMode, toggleDarkMode }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const [notificationCount] = useState(3); // Exemple: 3 notifications non lues
 
   const toggleDrawer = (open) => (event) => {
     if (event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) {
       return;
     }
     setDrawerOpen(open);
+  };
+
+  const handleNotificationClick = () => {
+    navigate('/notifications');
   };
 
   const menuItems = [
@@ -44,12 +63,13 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
       <AppBar 
         position="fixed" 
         style={{ 
-          backgroundColor: '#1976d2', 
+          backgroundColor: darkMode ? '#121212' : '#1976d2',
           height: '60px',
           width: 'calc(100% - 40px)',
           margin: '10px 20px',
           borderRadius: '8px',
           boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+          transition: 'background-color 0.3s ease',
         }}
       >
         <Toolbar style={{ minHeight: '60px', padding: '0 16px' }}>
@@ -68,7 +88,8 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
               flexGrow: 1, 
               fontSize: '1.1rem',
               fontWeight: 500,
-              marginLeft: '10px'
+              marginLeft: '10px',
+              color: darkMode ? '#ffffff' : '#ffffff'
             }}
           >
             {user ? `Bienvenue ${user.firstName} ${user.lastName}` : 'Bienvenue'}
@@ -78,16 +99,23 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
             <IconButton 
               color="inherit" 
               onClick={toggleDarkMode}
+              aria-label="toggle dark mode"
             >
               {darkMode ? (
-                <Brightness7OutlinedIcon style={{ fontSize: '1.4rem' }} />
+                <Brightness7OutlinedIcon style={{ fontSize: '1.4rem', color: '#ffeb3b' }} />
               ) : (
                 <Brightness4OutlinedIcon style={{ fontSize: '1.4rem' }} />
               )}
             </IconButton>
             
-            <IconButton color="inherit">
-              <NotificationsActiveOutlinedIcon style={{ fontSize: '1.4rem' }} />
+            <IconButton 
+              color="inherit"
+              onClick={handleNotificationClick}
+              aria-label="notifications"
+            >
+              <Badge badgeContent={notificationCount} color="error">
+                <NotificationsActiveOutlinedIcon style={{ fontSize: '1.4rem' }} />
+              </Badge>
             </IconButton>
             
             {user && (
@@ -97,8 +125,10 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
                 style={{ 
                   width: '36px', 
                   height: '36px',
-                  margin: 'auto 0'
+                  margin: 'auto 0',
+                  cursor: 'pointer'
                 }}
+                onClick={() => navigate('/profil')}
               >
                 {!user.avatar && user.firstName?.charAt(0)}
               </Avatar>
@@ -114,9 +144,10 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
         PaperProps={{ 
           style: { 
             width: '260px', 
-            backgroundColor: '#fff',
+            backgroundColor: darkMode ? '#1e1e1e' : '#fff',
             borderTopRightRadius: '12px',
-            borderBottomRightRadius: '12px'
+            borderBottomRightRadius: '12px',
+            transition: 'background-color 0.3s ease',
           } 
         }}
       >
@@ -126,7 +157,8 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
             flexDirection: 'column',
             alignItems: 'center',
             padding: '20px 16px',
-            backgroundColor: '#f5f5f5',
+            backgroundColor: darkMode ? '#2d2d2d' : '#f5f5f5',
+            transition: 'background-color 0.3s ease',
           }}
         >
           <Avatar
@@ -136,7 +168,7 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
               width: '80px', 
               height: '80px',
               marginBottom: '12px',
-              border: '3px solid #1976d2',
+              border: `3px solid ${darkMode ? '#90caf9' : '#1976d2'}`,
               fontSize: '32px'
             }}
           >
@@ -147,7 +179,7 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
             style={{
               fontSize: '1rem',
               fontWeight: 600,
-              color: '#1976d2',
+              color: darkMode ? '#ffffff' : '#1976d2',
               textAlign: 'center'
             }}
           >
@@ -156,7 +188,7 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
           <Typography
             variant="body2"
             style={{
-              color: '#666',
+              color: darkMode ? '#b0b0b0' : '#666',
               fontSize: '0.8rem',
               textAlign: 'center',
               marginTop: '4px'
@@ -175,9 +207,15 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
               to={item.link}
               onClick={toggleDrawer(false)}
               style={{
-                backgroundColor: location.pathname === item.link ? 'rgba(25, 118, 210, 0.08)' : 'transparent',
-                color: location.pathname === item.link ? '#1976d2' : '#555',
-                borderLeft: location.pathname === item.link ? '3px solid #1976d2' : 'none',
+                backgroundColor: location.pathname === item.link 
+                  ? (darkMode ? 'rgba(144, 202, 249, 0.16)' : 'rgba(25, 118, 210, 0.08)') 
+                  : 'transparent',
+                color: location.pathname === item.link 
+                  ? (darkMode ? '#90caf9' : '#1976d2') 
+                  : (darkMode ? '#e0e0e0' : '#555'),
+                borderLeft: location.pathname === item.link 
+                  ? `3px solid ${darkMode ? '#90caf9' : '#1976d2'}` 
+                  : 'none',
                 borderRadius: '0 4px 4px 0',
                 margin: '4px 8px',
                 padding: '8px 12px',
@@ -185,7 +223,9 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
             >
               <IconButton 
                 style={{ 
-                  color: location.pathname === item.link ? '#1976d2' : '#555',
+                  color: location.pathname === item.link 
+                    ? (darkMode ? '#90caf9' : '#1976d2') 
+                    : (darkMode ? '#e0e0e0' : '#555'),
                   padding: '4px',
                   marginRight: '8px',
                 }}
@@ -208,7 +248,10 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
           ))}
         </List>
 
-        <Divider style={{ margin: '8px 16px', backgroundColor: '#eee' }} />
+        <Divider style={{ 
+          margin: '8px 16px', 
+          backgroundColor: darkMode ? '#424242' : '#eee' 
+        }} />
 
         <List style={{ padding: '8px', marginBottom: '12px' }}>
           {bottomMenuItems.map((item) => (
@@ -224,10 +267,13 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
                   item.action();
                 }
               }}
+              style={{
+                color: darkMode ? '#e0e0e0' : '#555',
+              }}
             >
               <IconButton 
                 style={{ 
-                  color: '#555',
+                  color: darkMode ? '#e0e0e0' : '#555',
                   padding: '4px',
                   marginRight: '8px',
                 }}

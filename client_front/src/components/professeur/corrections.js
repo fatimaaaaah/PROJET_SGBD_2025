@@ -1,10 +1,12 @@
 import React from 'react';
 import { Typography, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, Paper, Button } from '@mui/material';
 import Navbar from '../Navbar/navbar';
+import ThemeSwitcher from '../../context/ThemeSwitcher ';
 const Corrections = () =>  {
   return (
     <div style={{ padding: '20px' }}>
       <Navbar/>
+      <ThemeSwitcher />
       <Typography variant="h4" gutterBottom>
         Corrections
       </Typography>
