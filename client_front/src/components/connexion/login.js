@@ -24,9 +24,11 @@ import GitHubLogin from 'react-github-login';
 import avatarImage from "../image/logo.webp";
 import GitHubIcon from '@mui/icons-material/GitHub';
 import GoogleIcon from '@mui/icons-material/Google';
+import { useAuth } from "../../context/AuthContext";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const images = [image1, image2, image3]; // Ajoutez autant d'images que nécessaire
 
@@ -79,6 +81,7 @@ const Login = () => {
       });
 
       if (res.data.success) {
+        login(res.data.user, res.data.token); // Utilisez la fonction login
         navigate("/home");
       } else {
         console.error("Erreur :", res.data.error);
@@ -97,6 +100,7 @@ const Login = () => {
       });
 
       if (res.data.success) {
+        login(res.data.user, res.data.token); // Utilisez la fonction login
         navigate("/home");
       } else {
         console.error("Erreur :", res.data.error);
@@ -127,19 +131,27 @@ const Login = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token: response.credential })
       });
-
+  
       const data = await res.json();
-
-      if (!res.ok) throw new Error(data.error || 'Erreur de connexion');
-
-      // Stocker le token
-      localStorage.setItem('token', data.token);
-      setUser(data.user);
-      navigate("/home"); // Redirect after successful login
-
+  
+      if (!res.ok) {
+        throw new Error(data.error || 'Erreur de connexion Google');
+      }
+  
+      const userData = {
+        ...data.user,
+        firstName: data.user.firstName || data.user.email?.split('@')[0],
+        lastName: data.user.lastName || '',
+      };
+  
+      login(userData, data.token);
+      navigate("/home");
+  
     } catch (error) {
-      console.error('Erreur Google Login:', error);
-      setError(error.message);
+      setErrors({
+        ...errors,
+        general: error.message
+      });
     }
   };
 
@@ -215,26 +227,33 @@ const Login = () => {
   // Gestion de la soumission du formulaire
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     if (validateForm()) {
       try {
         const response = await fetch("http://localhost:5000/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, mot_de_passe: password }),
+          
         });
-
+  
         const data = await response.json();
-
+  
         if (response.ok) {
-          localStorage.setItem("token", data.token); // <-- Correction ici
+          login(data.user, data.token); // Use your auth context login
           navigate("/home");
         } else {
-          setErrors({ ...errors, general: data.error });
+          setErrors({ 
+            ...errors, 
+            general: data.error || "Email ou mot de passe incorrect" 
+          });
         }
       } catch (err) {
         console.error(err.message);
-        setErrors({ ...errors, general: "Une erreur s'est produite. Veuillez réessayer." });
+        setErrors({ 
+          ...errors, 
+          general: "Erreur de connexion au serveur" 
+        });
       }
     }
   };

@@ -11,11 +11,29 @@ const path = require('path');
 const axios = require('axios');
 
 // MIDDLEWARE
-app.use(cors());
+//app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:3000', // autoriser spécifiquement votre frontend
+  credentials: true // autoriser les credentials
+}));
+
 app.use(express.json()); // Pour parser les requêtes JSON
-app.use('/uploads', express.static('uploads'));
+app.use('/uploads',express.static(path.join(__dirname, 'uploads')));
 // Middleware pour parser les requêtes JSON
 app.use(bodyParser.json());
+const corsOptions = {
+  origin: 'http://localhost:3000',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  optionsSuccessStatus: 200 // Pour les navigateurs legacy
+};
+
+app.use(cors(corsOptions));
+
+// Gérer explicitement les requêtes OPTIONS pour le preflight
+app.options('*', cors(corsOptions));
+
 
 //Stockage information utilisateur
 const { Client } = require('@microsoft/microsoft-graph-client');
@@ -60,34 +78,54 @@ const normalizeUser = (userData, authMethod) => {
 
 // Route pour la connexion
 app.post("/login", async (req, res) => {
-    try {
-        const { email, mot_de_passe } = req.body;
+  try {
+    const { email, mot_de_passe } = req.body;
 
-        // Vérifier si l'utilisateur existe
-        const user = await pool.query(
-            "SELECT * FROM professeur WHERE email = $1",
-            [email]
-        );
+    // Vérifier si l'utilisateur existe
+    const user = await pool.query(
+      "SELECT * FROM professeur WHERE email = $1",
+      [email]
+    );
 
-        if (user.rows.length === 0) {
-            return res.status(400).json({ error: "Aucun utilisateur trouvé avec cet email." });
-        }
-
-        // Vérifier si le mot de passe est correct
-        const isValidPassword = await bcrypt.compare(mot_de_passe, user.rows[0].mot_de_passe);
-
-        if (!isValidPassword) {
-            return res.status(400).json({ error: "Mot de passe incorrect.Veuillez réessayer." });
-        }
-
-        // Si tout est bon, renvoyer les informations de l'utilisateur (sans le mot de passe)
-        const userInfo = { ...user.rows[0] };
-        delete userInfo.mot_de_passe; // Ne pas renvoyer le mot de passe
-        res.json(userInfo);
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).json({ error: "Une erreur s'est produite lors de la connexion. Veuillez réessayer." });
+    if (user.rows.length === 0) {
+      return res.status(400).json({ error: "Aucun utilisateur trouvé avec cet email." });
     }
+
+    // Vérifier le mot de passe
+    const isValidPassword = await bcrypt.compare(mot_de_passe, user.rows[0].mot_de_passe);
+
+    if (!isValidPassword) {
+      return res.status(400).json({ error: "Mot de passe incorrect." });
+    }
+
+    // Créer le token JWT
+    const userData = { 
+      id: user.rows[0].idprof,
+      email: user.rows[0].email,
+      nom: user.rows[0].nom,
+      prenom: user.rows[0].prenom
+    };
+
+    const token = jwt.sign(userData, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+    // Envoyer la réponse
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 3600000 // 1 heure
+    });
+
+    res.json({
+      success: true,
+      user: userData,
+      token: token // Envoyer aussi le token dans le body si nécessaire
+    });
+
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
 });
 
 // Créer un professeur

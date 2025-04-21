@@ -15,6 +15,7 @@ import Profil from "./components/professeur/profil";
 import UserManual from "./components/professeur/manuel";
 import Dashboard from "./components/professeur/dashboard";
 import { GitHubProvider } from './context/GitHubContext';
+import ProtectedRoute from './context/ProtectedRoute';
 
 const App = () => {
   return (
@@ -28,14 +29,18 @@ const App = () => {
                 <Route path="/login" element={<Login />} />
                 <Route path="/" element={<Acceuil />} />
                 <Route path="/acceuil" element={<Acceuil />} />
-                <Route path="/home" element={<Home />} />
-                <Route path="/sujets" element={<Sujets />} />
-                <Route path="/corrections" element={<Corrections />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/notifications" element={<Notification />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="/profil" element={<Profil />} />
-                <Route path="/manuel" element={<UserManual />} />
+                
+                {/* Routes protégées */}
+                <Route element={<ProtectedRoute />}>
+                  <Route path="/home" element={<Home />} />
+                  <Route path="/sujets" element={<Sujets />} />
+                  <Route path="/corrections" element={<Corrections />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/notifications" element={<Notification />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/profil" element={<Profil />} />
+                  <Route path="/manuel" element={<UserManual />} />
+                </Route>
               </Routes>
             </Router>
           </AuthProvider>

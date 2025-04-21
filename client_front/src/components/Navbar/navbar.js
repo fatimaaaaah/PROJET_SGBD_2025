@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   AppBar, 
   Toolbar, 
@@ -11,7 +11,8 @@ import {
   Box, 
   Avatar, 
   Divider,
-  Badge
+  Badge,
+  CircularProgress
 } from '@mui/material';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -31,8 +32,12 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
-  const [notificationCount] = useState(3); // Exemple: 3 notifications non lues
+  const { user, token, logout } = useAuth();
+  const [notificationCount] = useState(3);
+
+  useEffect(() => {
+    console.log('User data in Navbar:', user);
+  }, [user]);
 
   const toggleDrawer = (open) => (event) => {
     if (event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) {
@@ -58,11 +63,15 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
     { text: 'Se Déconnecter', link: '/login', icon: <ExitToAppOutlinedIcon />, action: logout },
   ];
 
+  if (!token) {
+    return null;
+  }
+
   return (
     <>
       <AppBar 
         position="fixed" 
-        style={{ 
+        sx={{ 
           backgroundColor: darkMode ? '#121212' : '#1976d2',
           height: '60px',
           width: 'calc(100% - 40px)',
@@ -72,29 +81,36 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
           transition: 'background-color 0.3s ease',
         }}
       >
-        <Toolbar style={{ minHeight: '60px', padding: '0 16px' }}>
+        <Toolbar sx={{ minHeight: '60px', padding: '0 16px' }}>
           <IconButton 
             edge="start" 
             color="inherit" 
             aria-label="menu" 
             onClick={toggleDrawer(true)}
           >
-            <MenuIcon style={{ fontSize: '1.4rem' }} />
+            <MenuIcon sx={{ fontSize: '1.4rem' }} />
           </IconButton>
           
           <Typography 
             variant="h6" 
-            style={{ 
+            sx={{ 
               flexGrow: 1, 
               fontSize: '1.1rem',
               fontWeight: 500,
               marginLeft: '10px',
-              color: darkMode ? '#ffffff' : '#ffffff'
+              color: '#ffffff'
             }}
           >
-            {user ? `Bienvenue ${user.firstName} ${user.lastName}` : 'Bienvenue'}
+        {user ? (
+    <>
+      Bienvenue{' '}
+      {user.lastName ? `${user.lastName} ${user.firstName}` : user.firstName}
+    </>
+  ) : (
+    'Chargement...'
+  )}
           </Typography>
-          
+         
           <Box sx={{ display: 'flex', gap: '8px' }}>
             <IconButton 
               color="inherit" 
@@ -102,9 +118,9 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
               aria-label="toggle dark mode"
             >
               {darkMode ? (
-                <Brightness7OutlinedIcon style={{ fontSize: '1.4rem', color: '#ffeb3b' }} />
+                <Brightness7OutlinedIcon sx={{ fontSize: '1.4rem', color: '#ffeb3b' }} />
               ) : (
-                <Brightness4OutlinedIcon style={{ fontSize: '1.4rem' }} />
+                <Brightness4OutlinedIcon sx={{ fontSize: '1.4rem' }} />
               )}
             </IconButton>
             
@@ -114,25 +130,9 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
               aria-label="notifications"
             >
               <Badge badgeContent={notificationCount} color="error">
-                <NotificationsActiveOutlinedIcon style={{ fontSize: '1.4rem' }} />
+                <NotificationsActiveOutlinedIcon sx={{ fontSize: '1.4rem' }} />
               </Badge>
             </IconButton>
-            
-            {user && (
-              <Avatar 
-                src={user.avatar} 
-                alt={`${user.firstName} ${user.lastName}`}
-                style={{ 
-                  width: '36px', 
-                  height: '36px',
-                  margin: 'auto 0',
-                  cursor: 'pointer'
-                }}
-                onClick={() => navigate('/profil')}
-              >
-                {!user.avatar && user.firstName?.charAt(0)}
-              </Avatar>
-            )}
           </Box>
         </Toolbar>
       </AppBar>
@@ -142,7 +142,7 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
         open={drawerOpen}
         onClose={toggleDrawer(false)}
         PaperProps={{ 
-          style: { 
+          sx: { 
             width: '260px', 
             backgroundColor: darkMode ? '#1e1e1e' : '#fff',
             borderTopRightRadius: '12px',
@@ -152,7 +152,7 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
         }}
       >
         <Box
-          style={{
+          sx={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -161,44 +161,50 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
             transition: 'background-color 0.3s ease',
           }}
         >
-          <Avatar
-            alt={user ? `${user.firstName} ${user.lastName}` : 'Utilisateur'}
-            src={user?.avatar}
-            style={{ 
-              width: '80px', 
-              height: '80px',
-              marginBottom: '12px',
-              border: `3px solid ${darkMode ? '#90caf9' : '#1976d2'}`,
-              fontSize: '32px'
-            }}
-          >
-            {user && !user.avatar && `${user.firstName?.charAt(0)}${user.lastName?.charAt(0)}`}
-          </Avatar>
-          <Typography
-            variant="h6"
-            style={{
-              fontSize: '1rem',
-              fontWeight: 600,
-              color: darkMode ? '#ffffff' : '#1976d2',
-              textAlign: 'center'
-            }}
-          >
-            {user ? `${user.firstName} ${user.lastName}` : 'Invité'}
-          </Typography>
-          <Typography
-            variant="body2"
-            style={{
-              color: darkMode ? '#b0b0b0' : '#666',
-              fontSize: '0.8rem',
-              textAlign: 'center',
-              marginTop: '4px'
-            }}
-          >
-            {user?.email || 'Non connecté'}
-          </Typography>
+          {user ? (
+            <>
+              <Avatar
+                alt={`${user.firstName} ${user.lastName}`}
+                src={user.avatar}
+                sx={{ 
+                  width: '80px', 
+                  height: '80px',
+                  marginBottom: '12px',
+                  border: `3px solid ${darkMode ? '#90caf9' : '#1976d2'}`,
+                  fontSize: '32px'
+                }}
+              >
+                {!user.avatar && `${user.firstName?.charAt(0)}${user.lastName?.charAt(0)}`}
+              </Avatar>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  color: darkMode ? '#ffffff' : '#1976d2',
+                  textAlign: 'center'
+                }}
+              >
+                {`${user.firstName} ${user.lastName}`}
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: darkMode ? '#b0b0b0' : '#666',
+                  fontSize: '0.8rem',
+                  textAlign: 'center',
+                  marginTop: '4px'
+                }}
+              >
+                {user.email}
+              </Typography>
+            </>
+          ) : (
+            <CircularProgress color="inherit" />
+          )}
         </Box>
 
-        <List style={{ padding: '8px' }}>
+        <List sx={{ padding: '8px' }}>
           {menuItems.map((item) => (
             <ListItem
               button
@@ -206,7 +212,7 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
               component={Link}
               to={item.link}
               onClick={toggleDrawer(false)}
-              style={{
+              sx={{
                 backgroundColor: location.pathname === item.link 
                   ? (darkMode ? 'rgba(144, 202, 249, 0.16)' : 'rgba(25, 118, 210, 0.08)') 
                   : 'transparent',
@@ -222,7 +228,7 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
               }}
             >
               <IconButton 
-                style={{ 
+                sx={{ 
                   color: location.pathname === item.link 
                     ? (darkMode ? '#90caf9' : '#1976d2') 
                     : (darkMode ? '#e0e0e0' : '#555'),
@@ -231,7 +237,7 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
                 }}
               >
                 {React.cloneElement(item.icon, {
-                  style: {
+                  sx: {
                     fontSize: '1.2rem',
                     opacity: location.pathname === item.link ? 1 : 0.8
                   }
@@ -239,7 +245,7 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
               </IconButton>
               <ListItemText
                 primary={item.text}
-                style={{
+                sx={{
                   marginLeft: '4px',
                   fontSize: '0.85rem',
                 }}
@@ -248,12 +254,12 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
           ))}
         </List>
 
-        <Divider style={{ 
+        <Divider sx={{ 
           margin: '8px 16px', 
           backgroundColor: darkMode ? '#424242' : '#eee' 
         }} />
 
-        <List style={{ padding: '8px', marginBottom: '12px' }}>
+        <List sx={{ padding: '8px', marginBottom: '12px' }}>
           {bottomMenuItems.map((item) => (
             <ListItem
               button
@@ -267,19 +273,19 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
                   item.action();
                 }
               }}
-              style={{
+              sx={{
                 color: darkMode ? '#e0e0e0' : '#555',
               }}
             >
               <IconButton 
-                style={{ 
+                sx={{ 
                   color: darkMode ? '#e0e0e0' : '#555',
                   padding: '4px',
                   marginRight: '8px',
                 }}
               >
                 {React.cloneElement(item.icon, {
-                  style: {
+                  sx: {
                     fontSize: '1.2rem',
                     opacity: 0.8
                   }
@@ -287,7 +293,7 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
               </IconButton>
               <ListItemText 
                 primary={item.text} 
-                style={{ 
+                sx={{ 
                   marginLeft: '4px',
                   fontSize: '0.85rem'
                 }} 

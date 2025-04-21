@@ -1,13 +1,59 @@
-import { createContext, useContext, useEffect, useState } from 'react';
-import { jwtDecode } from 'jwt-decode'; // ✅ Import nommé
+import { createContext, useContext, useState, useCallback } from 'react';
+import { jwtDecode } from 'jwt-decode';
+
+const AuthContext = createContext();
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
+
+  const logout = useCallback(() => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+    setToken(null);
+  }, []);
 
 
-const AuthContext = createContext({
-  user: null,
-  token: null,
-  login: () => {},
-  logout: () => {}
-});
+  const login = (userData, token) => {
+    localStorage.setItem('token', token);
+    setUser(user);
+    try {
+      const decoded = jwtDecode(token);
+      const formattedUser = {
+        id: decoded.sub || userData.id,
+        firstName: userData.given_name || decoded.given_name || userData.firstName || '',
+        lastName: userData.family_name || decoded.family_name || userData.lastName || '',
+        email: decoded.email || userData.email,
+        avatar: userData.picture || userData.avatar,
+        role: decoded.role || 'user'
+      };
+
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(formattedUser));
+      setUser(formattedUser);
+      setToken(token);
+    } catch (error) {
+      console.error("Login error:", error);
+      logout();
+    }
+  };
+
+  const isAuthenticated = useCallback(() => !!token, [token]);
+
+  return (
+    <AuthContext.Provider value={{ 
+      user,
+      token,
+      login,
+      logout,
+      isAuthenticated // Maintenant exposée comme fonction
+    }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -15,58 +61,4 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-};
-
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
-
-  useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
-
-    if (storedToken && storedUser) {
-      const decoded = jwtDecode(storedToken); // 🟣 Décodage
-      const enrichedUser = {
-        ...JSON.parse(storedUser),
-        id: decoded.id, // ou decoded._id selon le format de ton token
-        role: decoded.role // optionnel
-      };
-
-      setToken(storedToken);
-      setUser(enrichedUser);
-    }
-  }, []);
-
-  const login = (userData, token) => {
-    const decoded = jwtDecode(token); // 🟣 Décodage du token à la connexion
-
-    const formattedUser = {
-      ...userData,
-      firstName: userData.firstName || userData.given_name || '',
-      lastName: userData.lastName || userData.family_name || '',
-      email: userData.email || '',
-      avatar: userData.picture || userData.avatar_url || '',
-      id: decoded.id, // 🟣 Ajouté
-      role: decoded.role // 🟣 Optionnel : si tu veux utiliser le rôle
-    };
-
-    localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(formattedUser));
-    setUser(formattedUser);
-    setToken(token);
-  };
-
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
-    setToken(null);
-  };
-
-  return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
 };

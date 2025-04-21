@@ -600,3 +600,881 @@ const Login = () => {
 };
 
 export default Login;
+
+
+
+
+
+
+import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import SignUp from "./components/connexion/signUp";
+import Login from "./components/connexion/login";
+import Acceuil from "./components/connexion/acceuil";
+import Home from "./components/professeur/home";
+import { GoogleOAuthProvider } from "@react-oauth/google";
+import Sujets from "./components/professeur/sujets";
+import Corrections from "./components/professeur/corrections";
+import Notification from "./components/professeur/notifications";
+import Settings from "./components/professeur/parametre";
+import Profil from "./components/professeur/profil";
+import UserManual from "./components/professeur/manuel";
+import Dashboard from "./components/professeur/dashboard";
+import { GitHubProvider } from './context/GitHubContext';
+
+const App = () => {
+  return (
+    <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID">
+      <GitHubProvider clientId="Ov23liXiPg89uvMwvlMY">
+        <ThemeProvider>
+          <AuthProvider>
+            <Router>
+              <Routes>
+                <Route path="/signup" element={<SignUp />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/" element={<Acceuil />} />
+                <Route path="/acceuil" element={<Acceuil />} />
+                <Route path="/home" element={<Home />} />
+                <Route path="/sujets" element={<Sujets />} />
+                <Route path="/corrections" element={<Corrections />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/notifications" element={<Notification />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/profil" element={<Profil />} />
+                <Route path="/manuel" element={<UserManual />} />
+              </Routes>
+            </Router>
+          </AuthProvider>
+        </ThemeProvider>
+      </GitHubProvider>
+    </GoogleOAuthProvider>
+  );
+};
+
+export default App;
+
+
+
+
+
+
+const express = require('express');
+const bodyParser = require('body-parser');
+const { Ollama } = require('ollama');
+const cors = require('cors');
+
+const app = express();
+app.use(cors());
+app.use(bodyParser.json());
+
+// Configuration Ollama avec le modèle DeepSeek
+const ollama = new Ollama({
+  host: 'http://localhost:11434', // ou l'URL de votre instance Ollama
+  model: 'deepseek' // ou le nom exact du modèle que vous utilisez
+});
+
+// Endpoint pour la correction automatique
+app.post('/api/correct', async (req, res) => {
+  try {
+    const { question, studentAnswer, correctAnswer, criteria } = req.body;
+
+    // Préparation du prompt pour l'IA
+    const prompt = `
+En tant qu'expert en bases de données, analysez cette réponse d'étudiant:
+
+Question: ${question}
+Réponse attendue: ${correctAnswer}
+Réponse de l'étudiant: ${studentAnswer}
+
+Critères d'évaluation: ${criteria.join(', ')}
+
+Effectuez:
+1. Analyse syntaxique et validation de la requête (si SQL)
+2. Comparaison avec la réponse attendue
+3. Notation sur 20 selon les critères
+4. Feedback détaillé avec améliorations
+5. Suggestions de ressources pour progression
+
+Format de sortie JSON:
+{
+  "valid": boolean,
+  "score": number,
+  "feedback": string,
+  "errors": string[],
+  "improvements": string[],
+  "resources": string[]
+}
+`;
+
+    // Appel à l'IA via Ollama
+    const response = await ollama.generate({
+      prompt,
+      format: 'json',
+      options: {
+        temperature: 0.3 // Pour des réponses plus factuelles
+      }
+    });
+
+    const correction = JSON.parse(response.output);
+    res.json(correction);
+
+  } catch (error) {
+    console.error('Erreur de correction:', error);
+    res.status(500).json({ error: 'Échec de la correction automatique' });
+  }
+});
+
+// Endpoint pour l'amélioration du modèle par les professeurs
+app.post('/api/improve-model', async (req, res) => {
+  try {
+    const { correctionId, professorFeedback, scoreAdjustment } = req.body;
+
+    // Ici vous pourriez stocker les corrections manuelles pour fine-tuning ultérieur
+    // ...
+
+    res.json({ success: true, message: 'Modèle marqué pour amélioration' });
+  } catch (error) {
+    console.error('Erreur amélioration modèle:', error);
+    res.status(500).json({ error: 'Échec de la mise à jour du modèle' });
+  }
+});
+
+const PORT = 3001;
+app.listen(PORT, () => {
+  console.log(`Serveur backend en écoute sur le port ${PORT}`);
+});
+
+
+
+
+
+import React, { useState, useEffect } from 'react';
+import { Typography, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, Paper, Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Rating, Box, Alert } from '@mui/material';
+import Navbar from '../Navbar/navbar';
+import ThemeSwitcher from '../../context/ThemeSwitcher';
+
+const Corrections = () => {
+  const [submissions, setSubmissions] = useState([]);
+  const [selectedSubmission, setSelectedSubmission] = useState(null);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [aiCorrection, setAiCorrection] = useState(null);
+  const [professorScore, setProfessorScore] = useState(0);
+  const [professorFeedback, setProfessorFeedback] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Fonction pour obtenir la correction automatique
+  const getAiCorrection = async (submission) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('http://localhost:3001/api/correct', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: submission.question,
+          studentAnswer: submission.answer,
+          correctAnswer: submission.expectedAnswer,
+          criteria: ['exactitude', 'complétude', 'optimisation']
+        })
+      });
+
+      if (!response.ok) throw new Error('Échec de la correction automatique');
+      
+      const data = await response.json();
+      setAiCorrection(data);
+      setProfessorScore(data.score);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fonction pour soumettre la correction améliorée par le professeur
+  const submitImprovedCorrection = async () => {
+    try {
+      await fetch('http://localhost:3001/api/improve-model', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          correctionId: selectedSubmission.id,
+          professorFeedback,
+          scoreAdjustment: professorScore - (aiCorrection?.score || 0)
+        })
+      });
+      
+      // Mettre à jour la soumission dans l'état local
+      setSubmissions(submissions.map(sub => 
+        sub.id === selectedSubmission.id 
+          ? { ...sub, score: professorScore, status: 'Corrigé' } 
+          : sub
+      ));
+      
+      setOpenDialog(false);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  // Exemple de données - à remplacer par un appel API réel
+  useEffect(() => {
+    // Simuler un chargement de données
+    setSubmissions([
+      {
+        id: 1,
+        student: 'Jean Dupont',
+        subject: 'Requêtes SQL',
+        date: '2023-10-01',
+        status: 'En attente',
+        score: null,
+        question: 'Écrire une requête pour trouver les employés avec un salaire > 50000',
+        answer: 'SELECT * FROM employés WHERE salaire > 5000', // Erreur volontaire
+        expectedAnswer: 'SELECT * FROM employes WHERE salaire > 50000'
+      }
+    ]);
+  }, []);
+
+  return (
+    <div style={{ padding: '20px' }}>
+      <Navbar/>
+      <ThemeSwitcher />
+      <Typography variant="h4" gutterBottom>
+        Corrections
+      </Typography>
+      
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Étudiant</TableCell>
+              <TableCell>Sujet</TableCell>
+              <TableCell>Date</TableCell>
+              <TableCell>Statut</TableCell>
+              <TableCell>Note</TableCell>
+              <TableCell>Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {submissions.map((submission) => (
+              <TableRow key={submission.id}>
+                <TableCell>{submission.student}</TableCell>
+                <TableCell>{submission.subject}</TableCell>
+                <TableCell>{submission.date}</TableCell>
+                <TableCell>{submission.status}</TableCell>
+                <TableCell>
+                  {submission.score ? `${submission.score}/20` : '--'}
+                </TableCell>
+                <TableCell>
+                  <Button 
+                    color="primary"
+                    onClick={() => {
+                      setSelectedSubmission(submission);
+                      getAiCorrection(submission);
+                      setOpenDialog(true);
+                    }}
+                  >
+                    Corriger
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="md" fullWidth>
+        <DialogTitle>
+          Correction - {selectedSubmission?.student} - {selectedSubmission?.subject}
+        </DialogTitle>
+        <DialogContent dividers>
+          {loading && <Typography>Analyse en cours par l'IA...</Typography>}
+          
+          {aiCorrection && (
+            <Box>
+              <Typography variant="h6" gutterBottom>Correction automatique</Typography>
+              <Typography><strong>Note IA:</strong> {aiCorrection.score}/20</Typography>
+              <Typography><strong>Validité:</strong> {aiCorrection.valid ? 'Valide' : 'Invalide'}</Typography>
+              
+              <Typography variant="subtitle1" mt={2}>Feedback:</Typography>
+              <Paper elevation={2} sx={{ p: 2, mb: 2 }}>
+                <Typography whiteSpace="pre-wrap">{aiCorrection.feedback}</Typography>
+              </Paper>
+
+              {aiCorrection.errors?.length > 0 && (
+                <Box mb={2}>
+                  <Typography color="error">Erreurs identifiées:</Typography>
+                  <ul>
+                    {aiCorrection.errors.map((err, i) => (
+                      <li key={i}>{err}</li>
+                    ))}
+                  </ul>
+                </Box>
+              )}
+
+              <Typography variant="h6" mt={3}>Ajustement professeur</Typography>
+              <Box display="flex" alignItems="center" mb={2}>
+                <Typography mr={2}>Note finale:</Typography>
+                <Rating
+                  name="professor-rating"
+                  value={professorScore}
+                  max={20}
+                  onChange={(_, newValue) => setProfessorScore(newValue)}
+                />
+                <Typography ml={1}>{professorScore}/20</Typography>
+              </Box>
+
+              <TextField
+                label="Feedback complémentaire"
+                multiline
+                fullWidth
+                rows={4}
+                value={professorFeedback}
+                onChange={(e) => setProfessorFeedback(e.target.value)}
+              />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDialog(false)}>Annuler</Button>
+          <Button 
+            onClick={submitImprovedCorrection}
+            disabled={loading}
+            variant="contained"
+          >
+            Enregistrer la correction
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </div>
+  );
+}
+
+export default Corrections;
+
+
+ollama pull deepseek
+
+
+
+import React, { useState, useEffect } from 'react';
+import {
+  Box, Button, Dialog, DialogActions, DialogContent, DialogTitle,
+  FormControl, InputLabel, MenuItem, Paper, Select, Snackbar,
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+  TextField, Typography, Alert, IconButton, Chip, Stack
+} from '@mui/material';
+import { Delete, Edit, Add, Close, Upload, Schedule } from '@mui/icons-material';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import Navbar from '../Navbar/navbar'; 
+
+const Sujets = () => {
+  // États principaux
+  const [cours, setCours] = useState([]);
+  const [openSnackbar, setOpenSnackbar] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
+
+  // États pour les cours
+  const [openCoursDialog, setOpenCoursDialog] = useState(false);
+  const [currentCours, setCurrentCours] = useState({ nom: '', code: '' });
+  const [actionType, setActionType] = useState('add');
+
+  // États pour les sujets
+  const [openSujetDialog, setOpenSujetDialog] = useState(false);
+  const [currentSujet, setCurrentSujet] = useState({
+    titre: '',
+    description: '',
+    type_sujet: '',
+    date_fin: new Date(),
+    heure_depot: '23:59',
+    fichier_pdf: null,
+    fileName: ''
+  });
+  const [selectedCoursId, setSelectedCoursId] = useState(null);
+
+  // Charger les cours au montage
+  useEffect(() => {
+    fetchCours();
+  }, []);
+
+  const fetchCours = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/cours');
+      const data = await response.json();
+      setCours(data);
+    } catch (error) {
+      showSnackbar('Erreur lors du chargement des cours', 'error');
+    }
+  };
+
+  const showSnackbar = (message, severity) => {
+    setSnackbarMessage(message);
+    setSnackbarSeverity(severity);
+    setOpenSnackbar(true);
+  };
+
+  // Gestion des cours
+  const handleOpenCoursDialog = (cours = null) => {
+    if (cours) {
+      setCurrentCours(cours);
+      setActionType('edit');
+    } else {
+      setCurrentCours({ nom: '', code: generateCode() });
+      setActionType('add');
+    }
+    setOpenCoursDialog(true);
+  };
+
+  const generateCode = () => {
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const numbers = '0123456789';
+    let code = '';
+    
+    for (let i = 0; i < 3; i++) {
+      code += letters.charAt(Math.floor(Math.random() * letters.length));
+    }
+    
+    for (let i = 0; i < 3; i++) {
+      code += numbers.charAt(Math.floor(Math.random() * numbers.length));
+    }
+    
+    return code;
+  };
+
+  const handleSaveCours = async () => {
+    try {
+      const url = actionType === 'add' 
+        ? 'http://localhost:5000/cours' 
+        : `http://localhost:5000/cours/${currentCours.idcours}`;
+      
+      const method = actionType === 'add' ? 'POST' : 'PUT';
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(currentCours)
+      });
+
+      if (!response.ok) throw new Error('Erreur');
+
+      showSnackbar(`Cours ${actionType === 'add' ? 'ajouté' : 'modifié'} avec succès`, 'success');
+      fetchCours();
+      setOpenCoursDialog(false);
+    } catch (error) {
+      showSnackbar(`Erreur lors de ${actionType === 'add' ? "l'ajout" : "la modification"} du cours`, 'error');
+    }
+  };
+
+  const handleDeleteCours = async (id) => {
+    try {
+      await fetch(`http://localhost:5000/cours/${id}`, { method: 'DELETE' });
+      showSnackbar('Cours supprimé avec succès', 'success');
+      fetchCours();
+    } catch (error) {
+      showSnackbar('Erreur lors de la suppression du cours', 'error');
+    }
+  };
+
+  // Gestion des sujets
+  const handleOpenSujetDialog = (coursId, sujet = null) => {
+    setSelectedCoursId(coursId);
+    if (sujet) {
+      setCurrentSujet({
+        ...sujet,
+        date_fin: new Date(sujet.date_fin),
+        heure_depot: sujet.heure_depot || '23:59',
+        fileName: sujet.fichier_pdf || ''
+      });
+      setActionType('edit');
+    } else {
+      setCurrentSujet({
+        titre: '',
+        description: '',
+        type_sujet: '',
+        date_fin: new Date(),
+        heure_depot: '23:59',
+        fichier_pdf: null,
+        fileName: ''
+      });
+      setActionType('add');
+    }
+    setOpenSujetDialog(true);
+  };
+
+  const handleSaveSujet = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        showSnackbar('Vous devez être connecté pour ajouter un sujet', 'error');
+        return;
+      }
+  
+      const formData = new FormData();
+      formData.append('titre', currentSujet.titre);
+      formData.append('description', currentSujet.description);
+      formData.append('type_sujet', currentSujet.type_sujet);
+      
+      // Combiner date et heure
+      const dateFin = new Date(currentSujet.date_fin);
+      const [hours, minutes] = currentSujet.heure_depot.split(':');
+      dateFin.setHours(parseInt(hours, 10));
+      dateFin.setMinutes(parseInt(minutes, 10));
+      
+      formData.append('date_fin', dateFin.toISOString());
+      
+      if (currentSujet.fichier_pdf instanceof File) {
+        formData.append('fichier_pdf', currentSujet.fichier_pdf);
+      }
+  
+      const response = await fetch(
+        actionType === 'add'
+          ? `http://localhost:5000/cours/${selectedCoursId}/sujets`
+          : `http://localhost:5000/sujets/${currentSujet.idsujet}`,
+        {
+          method: actionType === 'add' ? 'POST' : 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        }
+      );
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Erreur inconnue');
+      }
+  
+      showSnackbar(`Sujet ${actionType === 'add' ? 'ajouté' : 'modifié'} avec succès`, 'success');
+      fetchCours();
+      setOpenSujetDialog(false);
+    } catch (error) {
+      showSnackbar(error.message, 'error');
+      console.error('Erreur:', error);
+    }
+  };
+
+  const handleDeleteSujet = async (sujetId) => {
+    try {
+      await fetch(`http://localhost:5000/sujets/${sujetId}`, { method: 'DELETE' });
+      showSnackbar('Sujet supprimé avec succès', 'success');
+      fetchCours();
+    } catch (error) {
+      showSnackbar('Erreur lors de la suppression du sujet', 'error');
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setCurrentSujet({ 
+        ...currentSujet, 
+        fichier_pdf: file,
+        fileName: file.name 
+      });
+    }
+  };
+
+  const handleTimeChange = (e) => {
+    setCurrentSujet({ ...currentSujet, heure_depot: e.target.value });
+  };
+
+  return (
+    <Box sx={{ p: 3 }}>
+      <Navbar/>
+      <Typography variant="h4" gutterBottom>
+        Gestion des Cours et Sujets
+      </Typography>
+
+      {/* Boutons d'actions */}
+      <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+        <Button 
+          variant="contained" 
+          startIcon={<Add />}
+          onClick={() => handleOpenCoursDialog()}
+        >
+          Ajouter un Cours
+        </Button>
+      </Box>
+
+      {/* Liste des cours */}
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Nom</TableCell>
+              <TableCell>Code</TableCell>
+              <TableCell>Sujets</TableCell>
+              <TableCell>Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {cours.map((c) => (
+              <React.Fragment key={c.idcours}>
+                <TableRow>
+                  <TableCell>{c.nom}</TableCell>
+                  <TableCell>
+                    <Chip label={c.code} color="primary" variant="outlined" />
+                  </TableCell>
+                  <TableCell>
+                    <Button 
+                      size="small" 
+                      startIcon={<Add />}
+                      onClick={() => handleOpenSujetDialog(c.idcours)}
+                    >
+                      Ajouter un sujet
+                    </Button>
+                  </TableCell>
+                  <TableCell>
+                    <IconButton onClick={() => handleOpenCoursDialog(c)}>
+                      <Edit color="primary" />
+                    </IconButton>
+                    <IconButton onClick={() => handleDeleteCours(c.idcours)}>
+                      <Delete color="error" />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+                
+                {/* Liste des sujets pour ce cours */}
+                {c.sujets?.map((s) => {
+                  const dateFin = new Date(s.date_fin);
+                  return (
+                    <TableRow key={s.idsujet}>
+                      <TableCell colSpan={2}></TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                          <Typography>
+                            <strong>{s.titre}</strong> 
+                            <Chip 
+                              label={s.type_sujet} 
+                              size="small" 
+                              sx={{ ml: 1 }} 
+                              color={
+                                s.type_sujet === 'CC' ? 'primary' : 
+                                s.type_sujet === 'DS' ? 'secondary' : 'default'
+                              }
+                            />
+                          </Typography>
+                          <Typography variant="body2">{s.description}</Typography>
+                          <Typography variant="caption">
+                            Date limite: {dateFin.toLocaleDateString()} à {dateFin.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                          </Typography>
+                          {s.fichier_pdf && (
+                            <Typography variant="caption" sx={{ mt: 1 }}>
+                              Fichier: {s.fichier_pdf}
+                            </Typography>
+                          )}
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <IconButton onClick={() => handleOpenSujetDialog(c.idcours, s)}>
+                          <Edit color="primary" />
+                        </IconButton>
+                        <IconButton onClick={() => handleDeleteSujet(s.idsujet)}>
+                          <Delete color="error" />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </React.Fragment>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      {/* Dialog pour les cours */}
+      <Dialog open={openCoursDialog} onClose={() => setOpenCoursDialog(false)}>
+        <DialogTitle>
+          {actionType === 'add' ? 'Ajouter un Cours' : 'Modifier le Cours'}
+          <IconButton 
+            onClick={() => setOpenCoursDialog(false)} 
+            sx={{ position: 'absolute', right: 8, top: 8 }}
+          >
+            <Close />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 2 }}>
+          <TextField
+            margin="normal"
+            fullWidth
+            label="Nom du cours"
+            value={currentCours.nom}
+            onChange={(e) => setCurrentCours({ ...currentCours, nom: e.target.value })}
+          />
+          <TextField
+            margin="normal"
+            fullWidth
+            label="Code du cours"
+            value={currentCours.code}
+            InputProps={{ 
+              readOnly: true,
+              startAdornment: (
+                <Typography variant="body1" sx={{ mr: 1 }}>
+                  Code généré:
+                </Typography>
+              )
+            }}
+            sx={{
+              '& .MuiInputBase-input': {
+                fontWeight: 'bold',
+                color: 'primary.main'
+              }
+            }}
+          />
+          {actionType === 'add' && (
+            <Typography variant="caption" color="text.secondary">
+              Le code est généré automatiquement et ne peut pas être modifié.
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenCoursDialog(false)}>Annuler</Button>
+          <Button onClick={handleSaveCours} variant="contained">
+            {actionType === 'add' ? 'Ajouter' : 'Modifier'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dialog pour les sujets */}
+      <Dialog open={openSujetDialog} onClose={() => setOpenSujetDialog(false)} fullWidth maxWidth="md">
+        <DialogTitle>
+          {actionType === 'add' ? 'Ajouter un Sujet' : 'Modifier le Sujet'}
+          <IconButton 
+            onClick={() => setOpenSujetDialog(false)} 
+            sx={{ position: 'absolute', right: 8, top: 8 }}
+          >
+            <Close />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={3} sx={{ mt: 1 }}>
+            <TextField
+              fullWidth
+              label="Titre du sujet"
+              value={currentSujet.titre}
+              onChange={(e) => setCurrentSujet({ ...currentSujet, titre: e.target.value })}
+            />
+            
+            <FormControl fullWidth>
+              <InputLabel>Type de sujet</InputLabel>
+              <Select
+                value={currentSujet.type_sujet}
+                label="Type de sujet"
+                onChange={(e) => setCurrentSujet({ ...currentSujet, type_sujet: e.target.value })}
+              >
+                <MenuItem value="CC">Contrôle Continu (CC)</MenuItem>
+                <MenuItem value="TP">Travail Pratique (TP)</MenuItem>
+                <MenuItem value="TD">Travail Dirigé (TD)</MenuItem>
+                <MenuItem value="DS">Devoir Surveillé (DS)</MenuItem>
+              </Select>
+            </FormControl>
+            
+            <TextField
+              fullWidth
+              multiline
+              rows={4}
+              label="Description"
+              value={currentSujet.description}
+              onChange={(e) => setCurrentSujet({ ...currentSujet, description: e.target.value })}
+            />
+            
+            <Stack direction="row" spacing={2}>
+              <Box sx={{ width: '50%' }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Date limite
+                </Typography>
+                <DatePicker
+                  selected={currentSujet.date_fin}
+                  onChange={(date) => setCurrentSujet({ ...currentSujet, date_fin: date })}
+                  dateFormat="dd/MM/yyyy"
+                  customInput={
+                    <TextField fullWidth />
+                  }
+                />
+              </Box>
+              
+              <Box sx={{ width: '50%' }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Heure limite
+                </Typography>
+                <TextField
+                  type="time"
+                  fullWidth
+                  value={currentSujet.heure_depot}
+                  onChange={handleTimeChange}
+                  InputLabelProps={{
+                    shrink: true,
+                  }}
+                  inputProps={{
+                    step: 300, // 5 min
+                  }}
+                />
+              </Box>
+            </Stack>
+            
+            <Box>
+              <Typography variant="subtitle2" gutterBottom>
+                Fichier PDF
+              </Typography>
+              <Button
+                component="label"
+                variant="outlined"
+                startIcon={<Upload />}
+                sx={{ mr: 2 }}
+              >
+                Sélectionner un fichier
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={handleFileChange}
+                  hidden
+                />
+              </Button>
+              {currentSujet.fileName && (
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  Fichier sélectionné: {currentSujet.fileName}
+                </Typography>
+              )}
+              <Typography variant="caption" display="block" sx={{ mt: 1 }}>
+                Formats acceptés: PDF (taille max: 5MB)
+              </Typography>
+            </Box>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenSujetDialog(false)}>Annuler</Button>
+          <Button 
+            onClick={handleSaveSujet} 
+            variant="contained"
+            disabled={!currentSujet.titre || !currentSujet.type_sujet}
+          >
+            {actionType === 'add' ? 'Ajouter' : 'Modifier'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar pour les notifications */}
+      <Snackbar
+        open={openSnackbar}
+        autoHideDuration={6000}
+        onClose={() => setOpenSnackbar(false)}
+      >
+        <Alert 
+          onClose={() => setOpenSnackbar(false)} 
+          severity={snackbarSeverity}
+          sx={{ width: '100%' }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
+    </Box>
+  );
+};
+
+export default Sujets;
