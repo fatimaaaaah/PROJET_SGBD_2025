@@ -1,0 +1,104 @@
+/* Étudiant Dashboard CSS */
+
+.dashboard-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    background-color: #f4f4f4;
+    min-height: 100vh;
+}
+
+.dashboard-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.dashboard-header h1 {
+    font-size: 2rem;
+    color: #4285F4;
+}
+
+.dashboard-header p {
+    font-size: 1rem;
+    color: #555;
+}
+
+.dashboard-sections {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    width: 100%;
+    gap: 20px;
+}
+
+.dashboard-section {
+    background-color: #fff;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    flex: 1 1 200px;
+    min-width: 250px;
+    max-width: 300px;
+    text-align: center;
+}
+
+.dashboard-section h3 {
+    font-size: 1.5rem;
+    color: #4285F4;
+    margin-bottom: 10px;
+}
+
+.dashboard-section ul {
+    list-style-type: none;
+    padding: 0;
+    color: #333;
+}
+
+.dashboard-section ul li {
+    font-size: 1.1rem;
+    margin: 10px 0;
+}
+
+.dashboard-section .cta-button {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #4285F4;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    margin-top: 20px;
+}
+
+.dashboard-section .cta-button:hover {
+    background-color: #357ae8;
+}
+
+
+/* Ajouter des styles pour les graphiques et autres éléments plus complexes */
+
+.dashboard-performance {
+    width: 100%;
+    padding: 30px;
+    background-color: #fff;
+    border-radius: 10px;
+    margin-top: 30px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.dashboard-performance h2 {
+    font-size: 1.5rem;
+    color: #4285F4;
+}
+
+.dashboard-performance canvas {
+    max-width: 100%;
+    margin-top: 20px;
+}
+
+.dashboard-performance .performance-text {
+    font-size: 1.1rem;
+    color: #333;
+    margin-top: 10px;
+}

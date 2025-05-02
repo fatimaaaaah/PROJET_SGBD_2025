@@ -1,0 +1,104 @@
+/* Container principal */
+
+.login-container {
+    display: flex;
+    height: 100vh;
+    width: 100%;
+    overflow: hidden;
+}
+
+
+/* Fond de page */
+
+.login-background {
+    background-image: url('./assets/background.jpg');
+    background-size: cover;
+    background-position: center;
+    height: 100vh;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+
+/* Contenu principal */
+
+.login-content {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+
+/* Image à gauche du formulaire */
+
+.login-image {
+    width: 40%;
+    /* Ajuste la largeur de l'image */
+    margin-right: 20px;
+}
+
+.login-image img {
+    width: 100%;
+    height: auto;
+}
+
+
+/* Formulaire */
+
+.login-form {
+    background-color: white;
+    padding: 30px;
+    border-radius: 8px;
+    width: 400px;
+    /* Largeur fixe pour le formulaire */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.welcome-text {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 1.8rem;
+    color: #333;
+}
+
+
+/* Style des inputs */
+
+input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 1rem;
+}
+
+
+/* Bouton de connexion */
+
+.login-button {
+    width: 100%;
+    padding: 10px;
+    background-color: #4285F4;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.login-button:hover {
+    background-color: #357ae8;
+}
+
+
+/* Message d'erreur */
+
+.error-message {
+    color: red;
+    text-align: center;
+    margin-bottom: 15px;
+}
